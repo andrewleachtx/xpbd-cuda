@@ -1,6 +1,5 @@
 #pragma once
 #include "apbd/Shape.h"
-#include "se3/lib.h"
 #include <cstddef>
 
 namespace apbd {
@@ -16,7 +15,7 @@ struct BodyRigid {
   const static size_t DOF = 7;
   // base
   vec7 xInit;
-  vec7 xDotInit;
+  vec7 xdotInit;
   vec7 x;
   vec7 x0;
   vec7 x1;
@@ -42,7 +41,7 @@ struct BodyAffine {
   const static size_t DOF = 12;
   // base
   vec12 xInit;
-  vec12 xDotInit;
+  vec12 xdotInit;
   vec12 x;
   vec12 x0;
   vec12 x1;
@@ -60,6 +59,11 @@ struct BodyAffine {
 
   __host__ __device__ vec12 computeVelocity(unsigned int step,
                                             unsigned int substep, float hs);
+
+  /*
+   * Can only be called after calling setInitTransform
+   */
+  __host__ __device__ Eigen::Matrix4f computeInitTransform();
 };
 
 union _BodyInner {

@@ -14,4 +14,10 @@ __host__ __device__ Eigen::Vector4f wToQdot(Eigen::Vector4f q,
                                             Eigen::Vector3f w);
 
 __host__ __device__ Eigen::Matrix3f aaToMat(Eigen::Vector3f axis, float angle);
+
+__host__ __device__ Eigen::Vector4f matToQ(Eigen::Matrix3f R);
+
+__host__ __device__ Eigen::Matrix4f brac(Eigen::Matrix<float, 6, 1> x);
+
+__host__ __device__ Eigen::Vector3f qRot(Eigen::Vector4f q, Eigen::Vector3f v);
 } // namespace se3

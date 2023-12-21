@@ -1,4 +1,5 @@
 #include "apbd/Model.h"
+#include "se3/lib.h"
 #include <math.h>
 
 using Eigen::seq;

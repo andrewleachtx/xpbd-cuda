@@ -12,7 +12,7 @@ add_library(apbd-lib apbd/Model.cu apbd/Body.cu apbd/Collider.cu apbd/Shape.cu $
 
 target_include_directories(apbd-lib PUBLIC ../include)
 
-target_link_libraries(apbd-lib PUBLIC se3-lib)
+target_link_libraries(apbd-lib PUBLIC se3-lib svd3_cuda)
 
 source_group(
   TREE "${PROJECT_SOURCE_DIR}/include"
