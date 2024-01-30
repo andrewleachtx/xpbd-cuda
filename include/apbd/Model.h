@@ -4,6 +4,8 @@
 #include "Constraint.h"
 #include <cstddef>
 
+class Collider;
+
 namespace apbd {
 const size_t MAX_LAYERS = 8;
 const size_t MAX_LAYER_SIZE = 4;

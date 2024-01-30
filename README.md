@@ -14,3 +14,9 @@ cmake --build build
 ```bash
 cmake --build build --target test
 ```
+
+## Formatting
+
+```bash
+git ls-files -- '*.cu' '*.h' | xargs clang-format -i -style=file
+```

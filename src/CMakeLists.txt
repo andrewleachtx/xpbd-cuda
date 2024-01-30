@@ -1,3 +1,11 @@
+file(GLOB CBB_HEADER_LIST CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/collideBoxBox/*.h")
+
+add_library(cbb-lib collideBoxBox/odeBoxBox.cu ${CBB_HEADER_LIST})
+
+target_include_directories(cbb-lib PUBLIC ../include)
+
+target_link_libraries(cbb-lib PUBLIC Eigen3::Eigen)
+
 file(GLOB SE3_HEADER_LIST CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/se3/*.h")
 
 add_library(se3-lib se3/lib.cu ${SE3_HEADER_LIST})
@@ -8,7 +16,7 @@ target_link_libraries(se3-lib PUBLIC Eigen3::Eigen)
 
 file(GLOB APBD_HEADER_LIST CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/apbd/*.h")
 
-add_library(apbd-lib apbd/Model.cu apbd/Body.cu apbd/Collider.cu apbd/Shape.cu ${APBD_HEADER_LIST})
+add_library(apbd-lib apbd/Model.cu apbd/Body.cu apbd/Collider.cu apbd/Constraint.cu apbd/Shape.cu ${APBD_HEADER_LIST})
 
 target_include_directories(apbd-lib PUBLIC ../include)
 

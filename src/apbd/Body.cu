@@ -204,6 +204,74 @@ void Body::setInitVelocity(Eigen::Matrix<float, 6, 1> velocity) {
     break;
   }
 }
+
+Eigen::Matrix4f Body::computeTransform() {
+  switch (this->type) {
+    case BODY_AFFINE: {
+      auto &data = this->data.affine;
+      // TODO
+      break;
+    }
+    case BODY_RIGID: {
+      auto &data = this->data.rigid;
+      return data.computeTransform();
+    }
+    default:
+      break;
+    }
+}
+
+bool Body::broadphaseGround(Eigen::Matrix4f Eg) {
+  switch (this->type) {
+    case BODY_AFFINE: {
+      auto &data = this->data.affine;
+      // TODO
+      return false;
+    }
+    case BODY_RIGID: {
+      auto &data = this->data.rigid;
+      Eigen::Matrix4f E = data.computeTransform();
+      return data.shape.broadphaseGround(E, Eg);
+    }
+    default:
+      return false;
+    }
+}
+
+bool Body::broadphaseRigid(Body* other) {
+  switch (this->type) {
+    case BODY_AFFINE: {
+      auto &data = this->data.affine;
+      // TODO
+      return false;
+    }
+    case BODY_RIGID: {
+      auto &data = this->data.rigid;
+      Eigen::Matrix4f E1 = data.computeTransform();
+      Eigen::Matrix4f E2 = other->computeTransform();
+      // TODO: handle shape for affine
+      return data.shape.broadphaseShape(E1, &other->data.rigid.shape, E2);
+    }
+    default:
+      break;
+    }
+}
+
+bool Body::collide() {
+  switch (this->type) {
+  case BODY_AFFINE: {
+    auto &data = this->data.affine;
+    return data.collide;
+  }
+  case BODY_RIGID: {
+    auto &data = this->data.rigid;
+    return data.collide;
+  }
+  default:
+    return false;
+  }
+}
+
 BodyRigid::BodyRigid(Shape shape, float density)
     : shape(shape), density(density) {}
 
@@ -214,11 +282,18 @@ vec7 BodyRigid::computeVelocity(unsigned int step, unsigned int substep,
   else
     return (this->x - this->x0) / hs;
 }
+Eigen::Matrix4f BodyRigid::computeTransform() {
+  Eigen::Matrix4f E = Eigen::Matrix4f::Identity();
+  E.block<3,3>(0,0) = se3::qToMat(x.block<4,1>(0,0));
+  E.block<3,1>(3,0) = x.block<3,1>(4,0);
+}
 vec12 BodyAffine::computeVelocity(unsigned int step, unsigned int substep,
                                   float hs) {
-  if (step == 0 && substep == 0)
-    return this->xdotInit;
-  else
-    return (this->x - this->x0) / hs;
+                                    // TODO
+                                  }
+
+Eigen::Matrix4f BodyAffine::computeInitTransform() {
+  // TODO
 }
+
 } // namespace apbd
