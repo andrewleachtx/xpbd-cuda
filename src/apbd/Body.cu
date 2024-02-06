@@ -150,10 +150,7 @@ void Body::regularize() {
   }
   case BODY_RIGID: {
     auto &data = this->data.rigid;
-    data.x = data.x1;
-    Eigen::Vector4f q = data.x.block<4, 1>(0, 0);
-    q /= q.norm();
-    data.x.block<4, 1>(0, 0) = q;
+    data.regularize();
     break;
   }
   default:
@@ -171,7 +168,8 @@ void Body::setInitTransform(Eigen::Matrix4f E) {
   }
   case BODY_RIGID: {
     auto &data = this->data.rigid;
-    data.xInit.block<4, 1>(0, 0) = se3::matToQ(E.block<3, 3>(0, 0));
+    data.xInit.block<4, 1>(0, 0) =
+        Eigen::Quaternionf(E.block<3, 3>(0, 0)).coeffs();
     if (data.xInit(4) < 0) {
       data.xInit = -data.xInit;
     }
@@ -195,9 +193,10 @@ void Body::setInitVelocity(Eigen::Matrix<float, 6, 1> velocity) {
   }
   case BODY_RIGID: {
     auto &data = this->data.rigid;
-    Eigen::Vector4f q = data.xInit.block<4, 1>(0, 0);
-    data.xInit.block<3, 1>(4, 0) = se3::qRot(q, velocity.block<3, 1>(3, 0));
-    data.xInit.block<4, 1>(0, 0) = se3::wToQdot(q, velocity.block<3, 1>(0, 0));
+    Eigen::Quaternionf q = Eigen::Quaternionf(data.xInit.block<4, 1>(0, 0));
+    data.xInit.block<3, 1>(4, 0) = (q * velocity.block<3, 1>(3, 0));
+    data.xInit.block<4, 1>(0, 0) =
+        se3::wToQdot(q.coeffs(), velocity.block<3, 1>(0, 0));
     break;
   }
   default:
@@ -207,54 +206,54 @@ void Body::setInitVelocity(Eigen::Matrix<float, 6, 1> velocity) {
 
 Eigen::Matrix4f Body::computeTransform() {
   switch (this->type) {
-    case BODY_AFFINE: {
-      auto &data = this->data.affine;
-      // TODO
-      break;
-    }
-    case BODY_RIGID: {
-      auto &data = this->data.rigid;
-      return data.computeTransform();
-    }
-    default:
-      break;
-    }
+  case BODY_AFFINE: {
+    // auto &data = this->data.affine;
+    // TODO
+    break;
+  }
+  case BODY_RIGID: {
+    auto &data = this->data.rigid;
+    return data.computeTransform();
+  }
+  default:
+    break;
+  }
 }
 
 bool Body::broadphaseGround(Eigen::Matrix4f Eg) {
   switch (this->type) {
-    case BODY_AFFINE: {
-      auto &data = this->data.affine;
-      // TODO
-      return false;
-    }
-    case BODY_RIGID: {
-      auto &data = this->data.rigid;
-      Eigen::Matrix4f E = data.computeTransform();
-      return data.shape.broadphaseGround(E, Eg);
-    }
-    default:
-      return false;
-    }
+  case BODY_AFFINE: {
+    // auto &data = this->data.affine;
+    // TODO
+    return false;
+  }
+  case BODY_RIGID: {
+    auto &data = this->data.rigid;
+    Eigen::Matrix4f E = data.computeTransform();
+    return data.shape.broadphaseGround(E, Eg);
+  }
+  default:
+    return false;
+  }
 }
 
-bool Body::broadphaseRigid(Body* other) {
+bool Body::broadphaseRigid(Body *other) {
   switch (this->type) {
-    case BODY_AFFINE: {
-      auto &data = this->data.affine;
-      // TODO
-      return false;
-    }
-    case BODY_RIGID: {
-      auto &data = this->data.rigid;
-      Eigen::Matrix4f E1 = data.computeTransform();
-      Eigen::Matrix4f E2 = other->computeTransform();
-      // TODO: handle shape for affine
-      return data.shape.broadphaseShape(E1, &other->data.rigid.shape, E2);
-    }
-    default:
-      break;
-    }
+  case BODY_AFFINE: {
+    // auto &data = this->data.affine;
+    // TODO
+    return false;
+  }
+  case BODY_RIGID: {
+    auto &data = this->data.rigid;
+    Eigen::Matrix4f E1 = data.computeTransform();
+    Eigen::Matrix4f E2 = other->computeTransform();
+    // TODO: handle shape for affine
+    return data.shape.broadphaseShape(E1, &other->data.rigid.shape, E2);
+  }
+  default:
+    break;
+  }
 }
 
 bool Body::collide() {
@@ -282,15 +281,38 @@ vec7 BodyRigid::computeVelocity(unsigned int step, unsigned int substep,
   else
     return (this->x - this->x0) / hs;
 }
+Eigen::Vector3f BodyRigid::computePointVel(Eigen::Vector3f xl, float hs) {
+  // xdot = this.computeVelocity(k,ks,hs);
+  vec7 xdot = (this->x - this->x0) / hs;
+  Eigen::Vector4f qdot = xdot.block<4, 1>(0, 0);
+  Eigen::Vector3f pdot = xdot.block<3, 1>(4, 0); // in world coords
+  Eigen::Quaternionf q = Eigen::Quaternionf(this->x.block<4, 1>(0, 0));
+  Eigen::Vector3f w =
+      se3::qdotToW(q.coeffs(), qdot); // angular velocity in body coords
+  // v = R*cross(w,xl) + pdot
+  return (q * w.cross(xl)) + pdot;
+}
 Eigen::Matrix4f BodyRigid::computeTransform() {
   Eigen::Matrix4f E = Eigen::Matrix4f::Identity();
-  E.block<3,3>(0,0) = se3::qToMat(x.block<4,1>(0,0));
-  E.block<3,1>(3,0) = x.block<3,1>(4,0);
+  E.block<3, 3>(0, 0) =
+      Eigen::Quaternionf(x.block<4, 1>(0, 0)).toRotationMatrix();
+  E.block<3, 1>(3, 0) = x.block<3, 1>(4, 0);
+}
+void BodyRigid::applyJacobi() {
+  this->x1 += this->dxJacobi;
+  this->dxJacobi = vec7(0);
+  this->regularize();
+}
+void BodyRigid::regularize() {
+  this->x = this->x1;
+  Eigen::Vector4f q = this->x.block<4, 1>(0, 0);
+  q /= q.norm();
+  this->x.block<4, 1>(0, 0) = q;
 }
 vec12 BodyAffine::computeVelocity(unsigned int step, unsigned int substep,
                                   float hs) {
-                                    // TODO
-                                  }
+  // TODO
+}
 
 Eigen::Matrix4f BodyAffine::computeInitTransform() {
   // TODO

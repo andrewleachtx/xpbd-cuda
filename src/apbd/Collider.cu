@@ -45,4 +45,18 @@ void Collider::broadphase() {
 }
 
 void Collider::narrowphase() {}
+std::pair<Eigen::Vector3f, Eigen::Vector3f>
+Collider::generateTangents(Eigen::Vector3f nor) {
+  Eigen::Vector3f tmp;
+  if (abs(nor(3)) < 1e-6) {
+    tmp << 0, 0, 1;
+  } else {
+    tmp << 1, 0, 0;
+  }
+  Eigen::Vector3f tany = nor.cross(tmp);
+  tany = tany / tany.norm();
+  Eigen::Vector3f tanx = tany.cross(nor);
+  return std::pair(tanx, tany);
+}
+
 } // namespace apbd
