@@ -37,7 +37,6 @@ public:
   Eigen::Matrix4f ground_E;
   float ground_size;
   Eigen::Matrix<float, 6, 1> axis;
-  Collider *collider;
 
   // derived
   unsigned int steps;
@@ -61,6 +60,6 @@ public:
   /**
    * Runs all simulations to completion
    */
-  __host__ __device__ void simulate();
+  __host__ __device__ void simulate(Collider collider);
 };
 } // namespace apbd

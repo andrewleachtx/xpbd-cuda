@@ -1,12 +1,11 @@
 #include "apbd/Model.h"
+#include "config.h"
 
 #include <iostream>
 
 namespace apbd {
 
-Model::Model() {
-  // TODO: initialize components
-}
+Model::Model(): h(1/30), tEnd(1), substeps(10), bodies(nullptr), body_count(0), constraints(nullptr), constraint_count(0), constraint_layers(nullptr), layer_count(0), constraint_layer_sizes(nullptr), body_layers(nullptr), body_layer_sizes(nullptr), gravity(0,0,-980), iters(1), ground_E(Eigen::Matrix4f::Zero()), ground_size(10), axis() {}
 
 void Model::init() {
   // create bodies
