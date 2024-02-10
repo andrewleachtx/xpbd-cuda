@@ -1,6 +1,8 @@
 #pragma once
+#include "apbd/Collisions.h"
 #include "apbd/Shape.h"
 #include <cstddef>
+#include <cuda/std/array>
 
 namespace apbd {
 typedef Eigen::Matrix<float, 7, 1> vec7;
@@ -101,9 +103,11 @@ public:
   __host__ __device__ void setInitVelocity(Eigen::Matrix<float, 6, 1> velocity);
 
   __host__ __device__ bool broadphaseGround(Eigen::Matrix4f E);
-  // __host__ __device__ void narrowGround(Eigen::Matrix4f E);
+  __host__ __device__ cuda::std::array<CollisionGround, 8>
+  narrowphaseGround(Eigen::Matrix4f E);
   __host__ __device__ bool broadphaseRigid(Body *other);
-  // __host__ __device__ void narrowRigid(Body* other);
+  __host__ __device__ cuda::std::array<CollisionRigid, 8>
+  narrowphaseRigid(Body *other);
 
   __host__ __device__ Eigen::Matrix4f computeTransform();
 };

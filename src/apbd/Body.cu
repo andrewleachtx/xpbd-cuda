@@ -237,6 +237,24 @@ bool Body::broadphaseGround(Eigen::Matrix4f Eg) {
   }
 }
 
+cuda::std::array<CollisionGround, 8>
+Body::narrowphaseGround(Eigen::Matrix4f Eg) {
+  switch (this->type) {
+  case BODY_AFFINE: {
+    // auto &data = this->data.affine;
+    // TODO
+    return cuda::std::array<CollisionGround, 8>();
+  }
+  case BODY_RIGID: {
+    auto &data = this->data.rigid;
+    Eigen::Matrix4f E = data.computeTransform();
+    return data.shape.narrowphaseGround(E, Eg);
+  }
+  default:
+    return cuda::std::array<CollisionGround, 8>();
+  }
+}
+
 bool Body::broadphaseRigid(Body *other) {
   switch (this->type) {
   case BODY_AFFINE: {
@@ -253,6 +271,25 @@ bool Body::broadphaseRigid(Body *other) {
   }
   default:
     break;
+  }
+}
+
+cuda::std::array<CollisionRigid, 8> Body::narrowphaseRigid(Body *other) {
+  switch (this->type) {
+  case BODY_AFFINE: {
+    // auto &data = this->data.affine;
+    // TODO
+    return cuda::std::array<CollisionRigid, 8>();
+  }
+  case BODY_RIGID: {
+    auto &data = this->data.rigid;
+    Eigen::Matrix4f E1 = data.computeTransform();
+    Eigen::Matrix4f E2 = other->computeTransform();
+    // TODO: handle shape for affine
+    return data.shape.narrowphaseShape(E1, &other->data.rigid.shape, E2);
+  }
+  default:
+    return cuda::std::array<CollisionRigid, 8>();
   }
 }
 

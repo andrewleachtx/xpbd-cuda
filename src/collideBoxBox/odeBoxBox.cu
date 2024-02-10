@@ -108,15 +108,15 @@
 #endif
 #endif
 
-typedef double dReal;
+typedef float fReal;
 
 /* these types are mainly just used in headers */
-typedef dReal dVector3[4];
-typedef dReal dVector4[4];
-typedef dReal dMatrix3[4 * 3];
-typedef dReal dMatrix4[4 * 4];
-typedef dReal dMatrix6[8 * 6];
-typedef dReal dQuaternion[4];
+typedef fReal fVector3[4];
+typedef fReal fVector4[4];
+typedef fReal fMatrix3[4 * 3];
+typedef fReal fMatrix4[4 * 4];
+typedef fReal fMatrix6[8 * 6];
+typedef fReal dQuaternion[4];
 
 #define REAL(x) (x)
 #define dRecip(x) (1.0 / (x))
@@ -132,36 +132,36 @@ typedef dReal dQuaternion[4];
 #define dCopySign(a, b) (copysign((a), (b)))
 #define dNextAfter(x, y) nextafter(x, y)
 
-static __inline dReal _dCalcVectorDot3(const dReal *a, const dReal *b,
+static __inline fReal _dCalcVectorDot3(const fReal *a, const fReal *b,
                                        unsigned step_a, unsigned step_b) {
   return a[0] * b[0] + a[step_a] * b[step_b] + a[2 * step_a] * b[2 * step_b];
 }
 
-static __inline dReal dCalcVectorDot3(const dReal *a, const dReal *b) {
+static __inline fReal dCalcVectorDot3(const fReal *a, const fReal *b) {
   return _dCalcVectorDot3(a, b, 1, 1);
 }
-static __inline dReal dCalcVectorDot3_13(const dReal *a, const dReal *b) {
+static __inline fReal dCalcVectorDot3_13(const fReal *a, const fReal *b) {
   return _dCalcVectorDot3(a, b, 1, 3);
 }
-static __inline dReal dCalcVectorDot3_31(const dReal *a, const dReal *b) {
+static __inline fReal dCalcVectorDot3_31(const fReal *a, const fReal *b) {
   return _dCalcVectorDot3(a, b, 3, 1);
 }
-static __inline dReal dCalcVectorDot3_33(const dReal *a, const dReal *b) {
+static __inline fReal dCalcVectorDot3_33(const fReal *a, const fReal *b) {
   return _dCalcVectorDot3(a, b, 3, 3);
 }
-static __inline dReal dCalcVectorDot3_14(const dReal *a, const dReal *b) {
+static __inline fReal dCalcVectorDot3_14(const fReal *a, const fReal *b) {
   return _dCalcVectorDot3(a, b, 1, 4);
 }
-static __inline dReal dCalcVectorDot3_41(const dReal *a, const dReal *b) {
+static __inline fReal dCalcVectorDot3_41(const fReal *a, const fReal *b) {
   return _dCalcVectorDot3(a, b, 4, 1);
 }
-static __inline dReal dCalcVectorDot3_44(const dReal *a, const dReal *b) {
+static __inline fReal dCalcVectorDot3_44(const fReal *a, const fReal *b) {
   return _dCalcVectorDot3(a, b, 4, 4);
 }
 
-static __inline void dMultiplyHelper1_331(dReal *res, const dReal *a,
-                                          const dReal *b) {
-  dReal res_0, res_1, res_2;
+static __inline void dMultiplyHelper1_331(fReal *res, const fReal *a,
+                                          const fReal *b) {
+  fReal res_0, res_1, res_2;
   res_0 = dCalcVectorDot3_41(a, b);
   res_1 = dCalcVectorDot3_41(a + 1, b);
   res_2 = dCalcVectorDot3_41(a + 2, b);
@@ -172,14 +172,14 @@ static __inline void dMultiplyHelper1_331(dReal *res, const dReal *a,
   res[2] = res_2;
 }
 
-static __inline void dMultiply1_331(dReal *res, const dReal *a,
-                                    const dReal *b) {
+static __inline void dMultiply1_331(fReal *res, const fReal *a,
+                                    const fReal *b) {
   dMultiplyHelper1_331(res, a, b);
 }
 
-static __inline void dMultiplyHelper0_331(dReal *res, const dReal *a,
-                                          const dReal *b) {
-  dReal res_0, res_1, res_2;
+static __inline void dMultiplyHelper0_331(fReal *res, const fReal *a,
+                                          const fReal *b) {
+  fReal res_0, res_1, res_2;
   res_0 = dCalcVectorDot3(a, b);
   res_1 = dCalcVectorDot3(a + 4, b);
   res_2 = dCalcVectorDot3(a + 8, b);
@@ -190,8 +190,8 @@ static __inline void dMultiplyHelper0_331(dReal *res, const dReal *a,
   res[2] = res_2;
 }
 
-static __inline void dMultiply0_331(dReal *res, const dReal *a,
-                                    const dReal *b) {
+static __inline void dMultiply0_331(fReal *res, const fReal *a,
+                                    const fReal *b) {
   dMultiplyHelper0_331(res, a, b);
 }
 
@@ -200,9 +200,9 @@ static __inline void dMultiply0_331(dReal *res, const dReal *a,
 #define CONTACTS_UNIMPORTANT 0x80000000
 
 typedef struct dContactGeom {
-  dVector3 pos;    ///< contact position
-  dVector3 normal; ///< normal vector
-  dReal depth;     ///< penetration depth
+  fVector3 pos;    ///< contact position
+  fVector3 normal; ///< normal vector
+  fReal depth;     ///< penetration depth
 } dContactGeom;
 
 //****************************************************************************
@@ -214,17 +214,17 @@ typedef struct dContactGeom {
 // where pa,pb are two points, ua,ub are two unit length vectors, and alpha,
 // beta go from [-inf,inf], return alpha and beta such that qa and qb are
 // as close as possible
-void dLineClosestApproach(const dVector3 pa, const dVector3 ua,
-                          const dVector3 pb, const dVector3 ub, dReal *alpha,
-                          dReal *beta) {
-  dVector3 p;
+void dLineClosestApproach(const fVector3 pa, const fVector3 ua,
+                          const fVector3 pb, const fVector3 ub, fReal *alpha,
+                          fReal *beta) {
+  fVector3 p;
   p[0] = pb[0] - pa[0];
   p[1] = pb[1] - pa[1];
   p[2] = pb[2] - pa[2];
-  dReal uaub = dCalcVectorDot3(ua, ub);
-  dReal q1 = dCalcVectorDot3(ua, p);
-  dReal q2 = -dCalcVectorDot3(ub, p);
-  dReal d = 1 - uaub * uaub;
+  fReal uaub = dCalcVectorDot3(ua, ub);
+  fReal q1 = dCalcVectorDot3(ua, p);
+  fReal q2 = -dCalcVectorDot3(ub, p);
+  fReal d = 1 - uaub * uaub;
   if (d <= REAL(0.0001)) {
     // @@@ this needs to be made more robust
     *alpha = 0;
@@ -244,19 +244,19 @@ void dLineClosestApproach(const dVector3 pa, const dVector3 ua,
 // the number of intersection points is returned by the function (this will
 // be in the range 0 to 8).
 
-static int intersectRectQuad(dReal h[2], dReal p[8], dReal ret[16]) {
+static int intersectRectQuad(fReal h[2], fReal p[8], fReal ret[16]) {
   // q (and r) contain nq (and nr) coordinate points for the current (and
   // chopped) polygons
   int nq = 4, nr;
-  dReal buffer[16];
-  dReal *q = p;
-  dReal *r = ret;
+  fReal buffer[16];
+  fReal *q = p;
+  fReal *r = ret;
   for (int dir = 0; dir <= 1; dir++) {
     // direction notation: xy[0] = x axis, xy[1] = y axis
     for (int sign = -1; sign <= 1; sign += 2) {
       // chop q along the line xy[dir] = sign*h[dir]
-      dReal *pq = q;
-      dReal *pr = r;
+      fReal *pq = q;
+      fReal *pr = r;
       nr = 0;
       for (int i = nq; i > 0; i--) {
         // go through all points in q and all lines between adjacent points
@@ -271,7 +271,7 @@ static int intersectRectQuad(dReal h[2], dReal p[8], dReal ret[16]) {
             goto done;
           }
         }
-        dReal *nextq = (i > 1) ? pq + 2 : q;
+        fReal *nextq = (i > 1) ? pq + 2 : q;
         if ((sign * pq[dir] < h[dir]) ^ (sign * nextq[dir] < h[dir])) {
           // this line crosses the chopping line
           pr[1 - dir] = pq[1 - dir] + (nextq[1 - dir] - pq[1 - dir]) /
@@ -294,7 +294,7 @@ static int intersectRectQuad(dReal h[2], dReal p[8], dReal ret[16]) {
   }
 done:
   if (q != ret)
-    memcpy(ret, q, nr * 2 * sizeof(dReal));
+    memcpy(ret, q, nr * 2 * sizeof(fReal));
   return nr;
 }
 
@@ -306,10 +306,10 @@ done:
 // n must be in the range [1..8]. m must be in the range [1..n]. i0 must be
 // in the range [0..n-1].
 
-void cullPoints(int n, dReal p[], int m, int i0, int iret[]) {
+void cullPoints(int n, fReal p[], int m, int i0, int iret[]) {
   // compute the centroid of the polygon in cx,cy
   int i, j;
-  dReal a, cx, cy, q;
+  fReal a, cx, cy, q;
   if (n == 1) {
     cx = p[0];
     cy = p[1];
@@ -333,7 +333,7 @@ void cullPoints(int n, dReal p[], int m, int i0, int iret[]) {
   }
 
   // compute the angle of each point w.r.t. the centroid
-  dReal A[8];
+  fReal A[8];
   for (i = 0; i < n; i++)
     A[i] = dAtan2(p[i * 2 + 1] - cy, p[i * 2] - cx);
 
@@ -345,10 +345,10 @@ void cullPoints(int n, dReal p[], int m, int i0, int iret[]) {
   iret[0] = i0;
   iret++;
   for (j = 1; j < m; j++) {
-    a = (dReal)(dReal(j) * (2 * M_PI / m) + A[i0]);
+    a = (fReal)(fReal(j) * (2 * M_PI / m) + A[i0]);
     if (a > M_PI)
-      a -= (dReal)(2 * M_PI);
-    dReal maxdiff = 1e9, diff;
+      a -= (fReal)(2 * M_PI);
+    fReal maxdiff = 1e9, diff;
 #ifndef dNODEBUG
     *iret = i0; // iret is not allowed to keep this value
 #endif
@@ -356,7 +356,7 @@ void cullPoints(int n, dReal p[], int m, int i0, int iret[]) {
       if (avail[i]) {
         diff = dFabs(A[i] - a);
         if (diff > M_PI)
-          diff = (dReal)(2 * M_PI - diff);
+          diff = (fReal)(2 * M_PI - diff);
         if (diff < maxdiff) {
           maxdiff = diff;
           *iret = i;
@@ -383,14 +383,14 @@ void cullPoints(int n, dReal p[], int m, int i0, int iret[]) {
 // `contact' and `skip' are the contact array information provided to the
 // collision functions. this function only fills in the position and depth
 // fields.
-int dBoxBox(const dVector3 p1, const dMatrix3 R1, const dVector3 side1,
-            const dVector3 p2, const dMatrix3 R2, const dVector3 side2,
-            dVector3 normal, dReal *depth, int *return_code, int flags,
+int dBoxBox(const fVector3 p1, const fMatrix3 R1, const fVector3 side1,
+            const fVector3 p2, const fMatrix3 R2, const fVector3 side2,
+            fVector3 normal, fReal *depth, int *return_code, int flags,
             dContactGeom *contact) {
-  const dReal fudge_factor = REAL(1.05);
-  dVector3 p, pp, normalC = {0, 0, 0};
-  const dReal *normalR = 0;
-  dReal A[3], B[3], R11, R12, R13, R21, R22, R23, R31, R32, R33, Q11, Q12, Q13,
+  const fReal fudge_factor = REAL(1.05);
+  fVector3 p, pp, normalC = {0, 0, 0};
+  const fReal *normalR = 0;
+  fReal A[3], B[3], R11, R12, R13, R21, R22, R23, R31, R32, R33, Q11, Q12, Q13,
       Q21, Q22, Q23, Q31, Q32, Q33, s, s2, l, expr1_val;
   int i, j, invert_normal, code;
 
@@ -548,8 +548,8 @@ int dBoxBox(const dVector3 p1, const dMatrix3 R1, const dVector3 side1,
   if (code > 6) {
     // An edge from box 1 touches an edge from box 2.
     // find a point pa on the intersecting edge of box 1
-    dVector3 pa;
-    dReal sign;
+    fVector3 pa;
+    fReal sign;
     // Copy p1 into pa
     for (i = 0; i < 3; i++)
       pa[i] = p1[i]; // why no memcpy?
@@ -561,7 +561,7 @@ int dBoxBox(const dVector3 p1, const dMatrix3 R1, const dVector3 side1,
     }
 
     // find a point pb on the intersecting edge of box 2
-    dVector3 pb;
+    fVector3 pb;
     // Copy p2 into pb
     for (i = 0; i < 3; i++)
       pb[i] = p2[i]; // why no memcpy?
@@ -572,8 +572,8 @@ int dBoxBox(const dVector3 p1, const dMatrix3 R1, const dVector3 side1,
         pb[i] += sign * B[j] * R2[i * 4 + j];
     }
 
-    dReal alpha, beta;
-    dVector3 ua, ub;
+    fReal alpha, beta;
+    fVector3 ua, ub;
     // Get direction of first edge
     for (i = 0; i < 3; i++)
       ua[i] = R1[((code)-7) / 3 + i * 4];
@@ -599,7 +599,7 @@ int dBoxBox(const dVector3 p1, const dMatrix3 R1, const dVector3 side1,
   // face (i.e. the normal vector is perpendicular to this) and face 'b' to be
   // the incident face (the closest face of the other box).
   // Note: Unmodified parameter values are being used here
-  const dReal *Ra, *Rb, *pa, *pb, *Sa, *Sb;
+  const fReal *Ra, *Rb, *pa, *pb, *Sa, *Sb;
   if (code <= 3) { // One of the faces of box 1 is the reference face
     Ra = R1;       // Rotation of 'a'
     Rb = R2;       // Rotation of 'b'
@@ -622,7 +622,7 @@ int dBoxBox(const dVector3 p1, const dMatrix3 R1, const dVector3 side1,
           The normal is flipped if necessary so it always points outward from
      box 'a', box 'b' is thus always the incident box
   */
-  dVector3 normal2, nr, anr;
+  fVector3 normal2, nr, anr;
   if (code <= 3) {
     normal2[0] = normal[0];
     normal2[1] = normal[1];
@@ -665,7 +665,7 @@ int dBoxBox(const dVector3 p1, const dMatrix3 R1, const dVector3 side1,
   }
 
   // compute center point of incident face, in reference-face coordinates
-  dVector3 center;
+  fVector3 center;
   if (nr[lanr] < 0) {
     for (i = 0; i < 3; i++)
       center[i] = pb[i] - pa[i] + Sb[lanr] * Rb[i * 4 + lanr];
@@ -692,8 +692,8 @@ int dBoxBox(const dVector3 p1, const dMatrix3 R1, const dVector3 side1,
   }
 
   // find the four corners of the incident face, in reference-face coordinates
-  dReal quad[8]; // 2D coordinate of incident face (x,y pairs)
-  dReal c1, c2, m11, m12, m21, m22;
+  fReal quad[8]; // 2D coordinate of incident face (x,y pairs)
+  fReal c1, c2, m11, m12, m21, m22;
   c1 = dCalcVectorDot3_14(center, Ra + code1);
   c2 = dCalcVectorDot3_14(center, Ra + code2);
   // optimize this? - we have already computed this data above, but it is not
@@ -704,10 +704,10 @@ int dBoxBox(const dVector3 p1, const dMatrix3 R1, const dVector3 side1,
   m21 = dCalcVectorDot3_44(Ra + code2, Rb + a1);
   m22 = dCalcVectorDot3_44(Ra + code2, Rb + a2);
   {
-    dReal k1 = m11 * Sb[a1];
-    dReal k2 = m21 * Sb[a1];
-    dReal k3 = m12 * Sb[a2];
-    dReal k4 = m22 * Sb[a2];
+    fReal k1 = m11 * Sb[a1];
+    fReal k2 = m21 * Sb[a1];
+    fReal k3 = m12 * Sb[a2];
+    fReal k4 = m22 * Sb[a2];
     quad[0] = c1 - k1 - k3;
     quad[1] = c2 - k2 - k4;
     quad[2] = c1 - k1 + k3;
@@ -719,12 +719,12 @@ int dBoxBox(const dVector3 p1, const dMatrix3 R1, const dVector3 side1,
   }
 
   // find the size of the reference face
-  dReal rect[2];
+  fReal rect[2];
   rect[0] = Sa[code1];
   rect[1] = Sa[code2];
 
   // intersect the incident and reference faces
-  dReal ret[16];
+  fReal ret[16];
   int n = intersectRectQuad(rect, quad, ret);
   if (n < 1)
     return 0; // this should never happen
@@ -733,17 +733,17 @@ int dBoxBox(const dVector3 p1, const dMatrix3 R1, const dVector3 side1,
   // and compute the contact position and depth for each point. only keep
   // those points that have a positive (penetrating) depth. delete points in
   // the 'ret' array as necessary so that 'point' and 'ret' correspond.
-  dReal point[3 * 8]; // penetrating contact points
-  dReal dep[8];       // depths for those points
-  dReal det1 = dRecip(m11 * m22 - m12 * m21);
+  fReal point[3 * 8]; // penetrating contact points
+  fReal dep[8];       // depths for those points
+  fReal det1 = dRecip(m11 * m22 - m12 * m21);
   m11 *= det1;
   m12 *= det1;
   m21 *= det1;
   m22 *= det1;
   int cnum = 0; // number of penetrating contact points found
   for (j = 0; j < n; j++) {
-    dReal k1 = m22 * (ret[j * 2] - c1) - m12 * (ret[j * 2 + 1] - c2);
-    dReal k2 = -m21 * (ret[j * 2] - c1) + m11 * (ret[j * 2 + 1] - c2);
+    fReal k1 = m22 * (ret[j * 2] - c1) - m12 * (ret[j * 2 + 1] - c2);
+    fReal k2 = -m21 * (ret[j * 2] - c1) + m11 * (ret[j * 2 + 1] - c2);
     for (i = 0; i < 3; i++)
       point[cnum * 3 + i] =
           center[i] + k1 * Rb[i * 4 + a1] + k2 * Rb[i * 4 + a2];
@@ -783,7 +783,7 @@ int dBoxBox(const dVector3 p1, const dMatrix3 R1, const dVector3 side1,
     // we have more contacts than are wanted, some of them must be culled.
     // find the deepest point, it is always the first contact.
     int i1 = 0;
-    dReal maxdepth = dep[0];
+    fReal maxdepth = dep[0];
     for (i = 1; i < cnum; i++) {
       if (dep[i] > maxdepth) {
         maxdepth = dep[i];
@@ -814,10 +814,10 @@ int dBoxBox(const dVector3 p1, const dMatrix3 R1, const dVector3 side1,
 
 using namespace Eigen;
 
-Contacts odeBoxBox(const Matrix4d &Ma, const Vector3d &scaleA,
-                   const Matrix4d &Mb, const Vector3d &scaleB) {
+Contacts odeBoxBox(const Matrix4f &Ma, const Vector3f &scaleA,
+                   const Matrix4f &Mb, const Vector3f &scaleB) {
   // dBoxBox expects vec4 and mat43 (transposed)
-  double pa4[4], pb4[4], Ra4[12], Rb4[12];
+  float pa4[4], pb4[4], Ra4[12], Rb4[12];
   Ra4[0] = Ma(0, 0);
   Ra4[1] = Ma(0, 1);
   Ra4[2] = Ma(0, 2);
@@ -854,7 +854,7 @@ Contacts odeBoxBox(const Matrix4d &Ma, const Vector3d &scaleA,
   const int nContactGeoms = 8;
   dContactGeom contactGeoms[nContactGeoms];
   memset(contactGeoms, 0, nContactGeoms * sizeof(dContactGeom));
-  double sidesA[3], sidesB[3];
+  float sidesA[3], sidesB[3];
   sidesA[0] = scaleA(0);
   sidesA[1] = scaleA(1);
   sidesA[2] = scaleA(2);
@@ -862,8 +862,8 @@ Contacts odeBoxBox(const Matrix4d &Ma, const Vector3d &scaleA,
   sidesB[1] = scaleB(1);
   sidesB[2] = scaleB(2);
   int rc = 0;
-  double depthMax = 0;
-  double normal[3] = {0};
+  float depthMax = 0;
+  float normal[3] = {0};
   int hits = dBoxBox(pa4, Ra4, sidesA, pb4, Rb4, sidesB, normal, &depthMax, &rc,
                      nContactGeoms, contactGeoms);
 

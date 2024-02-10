@@ -1,4 +1,3 @@
-#pragma once
 #ifndef _ODEBOXBOX_
 #define _ODEBOXBOX_
 
@@ -12,14 +11,14 @@ struct Contacts {
   // Penetration depths
   double depths[8];
   // Contact points in world space
-  Eigen::Vector3d positions[8];
+  Eigen::Vector3f positions[8];
   // Contact normal (same for all points)
-  Eigen::Vector3d normal;
+  Eigen::Vector3f normal;
 };
 
-Contacts odeBoxBox(const Eigen::Matrix4d &M1,
-                   const Eigen::Vector3d &dimensions1,
-                   const Eigen::Matrix4d &M2,
-                   const Eigen::Vector3d &dimensions2);
+__host__ __device__ Contacts odeBoxBox(const Eigen::Matrix4f &M1,
+                   const Eigen::Vector3f &dimensions1,
+                   const Eigen::Matrix4f &M2,
+                   const Eigen::Vector3f &dimensions2);
 
 #endif

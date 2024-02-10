@@ -6,6 +6,49 @@ using Eigen::Vector2f, Eigen::Vector3f, Eigen::Vector4f, Eigen::Quaternionf;
 
 namespace apbd {
 
+Constraint::Constraint(ConstraintRigid rigid)
+    : type(CONSTRAINT_COLLISION_RIGID), data{.rigid = {rigid}} {}
+Constraint::Constraint(ConstraintGround ground)
+    : type(CONSTRAINT_COLLISION_GROUND), data{.ground = {ground}} {}
+Constraint::Constraint(ConstraintJointRevolve revolve)
+    : type(CONSTRAINT_JOINT_REVOLVE), data{.joint_revolve = {revolve}} {}
+
+ConstraintGround::ConstraintGround(BodyRigid *body, Eigen::Matrix4f Eg, float d,
+                                   Eigen::Vector3f xl, Eigen::Vector3f xw,
+                                   Eigen::Vector3f nw, Eigen::Vector3f vw)
+    : C(Vector3f::Zero()), lambda(Vector3f::Zero()), nw(nw),
+      lambdaSF(Vector3f::Zero()), d(0), dlambdaNor(0), shockProp(false),
+      body(body), Eg(Eg), xl(xl), xw(xw), vw(vw) {}
+
+ConstraintRigid::ConstraintRigid(BodyRigid *body1, BodyRigid *body2, float d,
+                                 Eigen::Vector3f nw, Eigen::Vector3f x1,
+                                 Eigen::Vector3f x2)
+    : C(Vector3f::Zero()), lambda(Vector3f::Zero()), nw(nw),
+      lambdaSF(Vector3f::Zero()), d(0), dlambdaNor(0), shockProp(false),
+      body1(body1), body2(body2), x1(x1), x2(x2) {}
+
+Constraint &Constraint::operator=(const Constraint &other) {
+  this->type = other.type;
+  switch (type) {
+  case CONSTRAINT_COLLISION_GROUND: {
+    this->data.ground = other.data.ground;
+    break;
+  }
+  case CONSTRAINT_COLLISION_RIGID: {
+    this->data.rigid = other.data.rigid;
+    break;
+  }
+  case CONSTRAINT_JOINT_REVOLVE: {
+    this->data.joint_revolve = other.data.joint_revolve;
+    break;
+  }
+
+  default:
+    break;
+  }
+  return *this;
+}
+
 void Constraint::clear() {
   switch (type) {
   case CONSTRAINT_COLLISION_GROUND: {
@@ -21,7 +64,7 @@ void Constraint::clear() {
     break;
   }
   case CONSTRAINT_JOINT_REVOLVE: {
-    ConstraintJointRevolve *c = &data.joint;
+    ConstraintJointRevolve *c = &data.joint_revolve;
     c->C = Eigen::Vector3f::Zero();
     c->lambda = Eigen::Vector3f::Zero();
     break;
@@ -47,7 +90,7 @@ void Constraint::solve(float hs, bool doShockProp) {
     break;
   }
   case CONSTRAINT_JOINT_REVOLVE: {
-    ConstraintJointRevolve *c = &data.joint;
+    ConstraintJointRevolve *c = &data.joint_revolve;
     c->solve();
     break;
   }

@@ -26,6 +26,10 @@ struct ConstraintGround {
   Eigen::Vector3f xw;
   Eigen::Vector3f vw;
 
+  ConstraintGround(BodyRigid *body, Eigen::Matrix4f Eg, float d,
+                   Eigen::Vector3f xl, Eigen::Vector3f xw, Eigen::Vector3f nw,
+                   Eigen::Vector3f vw);
+
   vec7 computeDx(float dlambda, Eigen::Vector3f frictionalContactNormal);
   float solvePosDir1(float c, Eigen::Vector3f nw);
   void solveNorPos(float hs);
@@ -44,6 +48,9 @@ struct ConstraintRigid {
   BodyRigid *body2;
   Eigen::Vector3f x1;
   Eigen::Vector3f x2;
+
+  ConstraintRigid(BodyRigid *body1, BodyRigid *body2, float d,
+                  Eigen::Vector3f nw, Eigen::Vector3f x1, Eigen::Vector3f x2);
 
   void solveNorPos(float hs);
   float solvePosDir2(float c, Eigen::Vector3f nw);
@@ -69,13 +76,18 @@ struct ConstraintJointRevolve {
 union ConstraintInner {
   ConstraintGround ground;
   ConstraintRigid rigid;
-  ConstraintJointRevolve joint;
+  ConstraintJointRevolve joint_revolve;
 };
 
 class Constraint {
 public:
   CONSTRAINT_TYPE type;
   ConstraintInner data;
+
+  __host__ __device__ Constraint(ConstraintRigid rigid);
+  __host__ __device__ Constraint(ConstraintGround ground);
+  __host__ __device__ Constraint(ConstraintJointRevolve revolve);
+  __host__ __device__ Constraint &operator=(const Constraint &);
 
   __host__ __device__ void clear();
 

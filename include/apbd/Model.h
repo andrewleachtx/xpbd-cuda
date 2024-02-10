@@ -13,7 +13,6 @@ const size_t MAX_LAYER_SIZE = 4;
 class Model {
 public:
   // private members
-  // TODO
   /**
    * The duration of one simulation step
    */

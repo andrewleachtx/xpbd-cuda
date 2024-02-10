@@ -1,6 +1,8 @@
 #pragma once
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
+#include "Collisions.h"
 #include <Eigen/Dense>
+#include <cuda/std/array>
 
 namespace apbd {
 
@@ -10,6 +12,10 @@ struct ShapeCuboid {
   __host__ __device__ bool broadphaseShapeCuboid(Eigen::Matrix4f E1,
                                                  ShapeCuboid *other,
                                                  Eigen::Matrix4f E2);
+  __host__ __device__ cuda::std::array<CollisionRigid, 8>
+  narrowphaseShapeCuboid(Eigen::Matrix4f E1, ShapeCuboid *other,
+                         Eigen::Matrix4f E2);
+  __host__ __device__ float raycast(Eigen::Vector3f x, Eigen::Vector3f n);
 };
 
 enum SHAPE_TYPE {
@@ -25,6 +31,7 @@ public:
   SHAPE_TYPE type;
   _ShapeInner data;
 
+  // TODO: handle other shapes
   Shape(const Shape &other)
       : type(other.type), data{.cuboid = other.data.cuboid} {
     // this->type = other.type;
@@ -39,10 +46,12 @@ public:
 
   __host__ __device__ bool broadphaseGround(Eigen::Matrix4f E,
                                             Eigen::Matrix4f Eg);
-  // __host__ __device__ void narrowGround(Eigen::Matrix4f E);
+  __host__ __device__ cuda::std::array<CollisionGround, 8>
+  narrowphaseGround(Eigen::Matrix4f E, Eigen::Matrix4f Eg);
   __host__ __device__ bool broadphaseShape(Eigen::Matrix4f E1, Shape *other,
                                            Eigen::Matrix4f E2);
-  // __host__ __device__ void narrowShape(Shape* other);
+  __host__ __device__ cuda::std::array<CollisionRigid, 8>
+  narrowphaseShape(Eigen::Matrix4f E1, Shape *other, Eigen::Matrix4f E2);
   Shape(ShapeCuboid cuboid);
 };
 
