@@ -23,7 +23,7 @@ bool Shape::broadphaseGround(Eigen::Matrix4f E, Eigen::Matrix4f Eg) {
   }
 }
 
-cuda::std::array<CollisionGround, 8>
+cuda::std::pair<cuda::std::array<CollisionGround, 8>, size_t>
 Shape::narrowphaseGround(Eigen::Matrix4f E, Eigen::Matrix4f Eg) {
   auto cdata = cuda::std::array<CollisionGround, 8>();
   switch (type) {
@@ -66,10 +66,10 @@ Shape::narrowphaseGround(Eigen::Matrix4f E, Eigen::Matrix4f Eg) {
       }
     }
 
-    return cdata;
+    return cuda::std::pair(cdata, cdata_count);
   }
   default:
-    return cdata;
+    return cuda::std::pair(cdata, 0);
   }
 }
 
@@ -89,7 +89,7 @@ bool Shape::broadphaseShape(Eigen::Matrix4f E1, Shape *other,
   }
 }
 
-cuda::std::array<CollisionRigid, 8>
+cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t>
 Shape::narrowphaseShape(Eigen::Matrix4f E1, Shape *other, Eigen::Matrix4f E2) {
   switch (type) {
   case SHAPE_CUBOID:
@@ -98,10 +98,10 @@ Shape::narrowphaseShape(Eigen::Matrix4f E1, Shape *other, Eigen::Matrix4f E2) {
       return this->data.cuboid.narrowphaseShapeCuboid(E1, &other->data.cuboid,
                                                       E2);
     default:
-      return cuda::std::array<CollisionRigid, 8>();
+      return cuda::std::pair(cuda::std::array<CollisionRigid, 8>(), 0);
     }
   default:
-    return cuda::std::array<CollisionRigid, 8>();
+    return cuda::std::pair(cuda::std::array<CollisionRigid, 8>(), 0);
   }
 }
 
@@ -116,7 +116,7 @@ bool ShapeCuboid::broadphaseShapeCuboid(Eigen::Matrix4f E1, ShapeCuboid *other,
   return d < 1.5 * (r1 + r2);
 }
 
-cuda::std::array<CollisionRigid, 8>
+cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t>
 ShapeCuboid::narrowphaseShapeCuboid(Eigen::Matrix4f E1, ShapeCuboid *other,
                                     Eigen::Matrix4f E2) {
   cuda::std::array<CollisionRigid, 8> cdata{};
@@ -150,7 +150,7 @@ ShapeCuboid::narrowphaseShapeCuboid(Eigen::Matrix4f E1, ShapeCuboid *other,
                        // starting inside the box
     cdata[i] = CollisionRigid{.d = d, .xw = xw, .nw = nw, .x1 = x1, .x2 = x2};
   }
-  return cdata;
+  return cuda::std::pair(cdata, collisions.count);
 }
 
 float ShapeCuboid::raycast(Eigen::Vector3f x, Eigen::Vector3f n) {

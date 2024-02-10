@@ -49,9 +49,11 @@ void Collider::narrowphase() {
 
   for (size_t i = 1; i < this->bp_count_1; i++) {
     auto body = this->bpList1[i];
-    auto cdata = body->narrowphaseGround(Eg);
-    for (size_t k = 1; k < cdata.size(); k++) {
-      auto c = cdata[k];
+    auto cpair = body->narrowphaseGround(Eg);
+    auto cdata = cpair.first;
+    auto c_count = cpair.second;
+    for (size_t k = 1; k < c_count; k++) {
+      auto &c = cdata[k];
       switch (body->type) {
       case BODY_RIGID: {
         this->collisions[this->collision_count++] = Constraint(ConstraintGround(
@@ -67,9 +69,11 @@ void Collider::narrowphase() {
   for (size_t i = 1; i < this->bp_count_2; i += 2) {
     auto body1 = this->bpList2[i];
     auto body2 = this->bpList2[i + 1];
-    auto cdata = body1->narrowphaseRigid(body2);
-    for (size_t k = 1; k < cdata.size(); k++) {
-      auto c = cdata[k];
+    auto cpair = body1->narrowphaseRigid(body2);
+    auto cdata = cpair.first;
+    auto c_count = cpair.second;
+    for (size_t k = 1; k < c_count; k++) {
+      auto &c = cdata[k];
       switch (body1->type) {
       case BODY_RIGID: {
         // we require the other body to be rigid

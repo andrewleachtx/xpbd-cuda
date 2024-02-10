@@ -103,10 +103,10 @@ public:
   __host__ __device__ void setInitVelocity(Eigen::Matrix<float, 6, 1> velocity);
 
   __host__ __device__ bool broadphaseGround(Eigen::Matrix4f E);
-  __host__ __device__ cuda::std::array<CollisionGround, 8>
+  __host__ __device__ cuda::std::pair<cuda::std::array<CollisionGround, 8>, size_t>
   narrowphaseGround(Eigen::Matrix4f E);
   __host__ __device__ bool broadphaseRigid(Body *other);
-  __host__ __device__ cuda::std::array<CollisionRigid, 8>
+  __host__ __device__ cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t>
   narrowphaseRigid(Body *other);
 
   __host__ __device__ Eigen::Matrix4f computeTransform();

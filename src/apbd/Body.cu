@@ -237,21 +237,21 @@ bool Body::broadphaseGround(Eigen::Matrix4f Eg) {
   }
 }
 
-cuda::std::array<CollisionGround, 8>
+cuda::std::pair<cuda::std::array<CollisionGround, 8>, size_t>
 Body::narrowphaseGround(Eigen::Matrix4f Eg) {
   switch (this->type) {
   case BODY_AFFINE: {
     // auto &data = this->data.affine;
     // TODO
-    return cuda::std::array<CollisionGround, 8>();
+      return cuda::std::pair(cuda::std::array<CollisionGround, 8>(), 0);
   }
   case BODY_RIGID: {
     auto &data = this->data.rigid;
     Eigen::Matrix4f E = data.computeTransform();
-    return data.shape.narrowphaseGround(E, Eg);
+      return data.shape.narrowphaseGround(E, Eg);
   }
   default:
-    return cuda::std::array<CollisionGround, 8>();
+      return cuda::std::pair(cuda::std::array<CollisionGround, 8>(), 0);
   }
 }
 
@@ -274,12 +274,12 @@ bool Body::broadphaseRigid(Body *other) {
   }
 }
 
-cuda::std::array<CollisionRigid, 8> Body::narrowphaseRigid(Body *other) {
+cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t> Body::narrowphaseRigid(Body *other) {
   switch (this->type) {
   case BODY_AFFINE: {
     // auto &data = this->data.affine;
     // TODO
-    return cuda::std::array<CollisionRigid, 8>();
+      return cuda::std::pair(cuda::std::array<CollisionRigid, 8>(), 0);
   }
   case BODY_RIGID: {
     auto &data = this->data.rigid;
@@ -289,7 +289,7 @@ cuda::std::array<CollisionRigid, 8> Body::narrowphaseRigid(Body *other) {
     return data.shape.narrowphaseShape(E1, &other->data.rigid.shape, E2);
   }
   default:
-    return cuda::std::array<CollisionRigid, 8>();
+    return cuda::std::pair(cuda::std::array<CollisionRigid, 8>(), 0);
   }
 }
 
