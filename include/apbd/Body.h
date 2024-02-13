@@ -37,6 +37,7 @@ struct BodyRigid {
 
   __host__ __device__ vec7 computeVelocity(unsigned int step,
                                            unsigned int substep, float hs);
+  __host__ __device__ void computeInertiaConst();
 
   __host__ __device__ Eigen::Vector3f computePointVel(Eigen::Vector3f xl,
                                                       float hs);
@@ -67,6 +68,7 @@ struct BodyAffine {
 
   __host__ __device__ vec12 computeVelocity(unsigned int step,
                                             unsigned int substep, float hs);
+  __host__ __device__ void computeInertiaConst();
 
   /*
    * Can only be called after calling setInitTransform
@@ -87,6 +89,8 @@ public:
   Body(BodyRigid rigid);
   Body(BodyAffine affine);
 
+  void init();
+
   __host__ __device__ bool collide();
 
   __host__ __device__ void stepBDF1(unsigned int step, unsigned int substep,
@@ -103,11 +107,13 @@ public:
   __host__ __device__ void setInitVelocity(Eigen::Matrix<float, 6, 1> velocity);
 
   __host__ __device__ bool broadphaseGround(Eigen::Matrix4f E);
-  __host__ __device__ cuda::std::pair<cuda::std::array<CollisionGround, 8>, size_t>
-  narrowphaseGround(Eigen::Matrix4f E);
+  __host__
+      __device__ cuda::std::pair<cuda::std::array<CollisionGround, 8>, size_t>
+      narrowphaseGround(Eigen::Matrix4f E);
   __host__ __device__ bool broadphaseRigid(Body *other);
-  __host__ __device__ cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t>
-  narrowphaseRigid(Body *other);
+  __host__
+      __device__ cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t>
+      narrowphaseRigid(Body *other);
 
   __host__ __device__ Eigen::Matrix4f computeTransform();
 };

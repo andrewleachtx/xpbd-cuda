@@ -13,9 +13,10 @@ struct ShapeCuboid {
   __host__ __device__ bool broadphaseShapeCuboid(Eigen::Matrix4f E1,
                                                  ShapeCuboid *other,
                                                  Eigen::Matrix4f E2);
-  __host__ __device__ cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t> 
-  narrowphaseShapeCuboid(Eigen::Matrix4f E1, ShapeCuboid *other,
-                         Eigen::Matrix4f E2);
+  __host__
+      __device__ cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t>
+      narrowphaseShapeCuboid(Eigen::Matrix4f E1, ShapeCuboid *other,
+                             Eigen::Matrix4f E2);
   __host__ __device__ float raycast(Eigen::Vector3f x, Eigen::Vector3f n);
 };
 
@@ -44,16 +45,19 @@ public:
     //     break;
     // }
   }
+  Shape(ShapeCuboid cuboid);
 
   __host__ __device__ bool broadphaseGround(Eigen::Matrix4f E,
                                             Eigen::Matrix4f Eg);
-  __host__ __device__ cuda::std::pair<cuda::std::array<CollisionGround, 8>, size_t>
-  narrowphaseGround(Eigen::Matrix4f E, Eigen::Matrix4f Eg);
+  __host__
+      __device__ cuda::std::pair<cuda::std::array<CollisionGround, 8>, size_t>
+      narrowphaseGround(Eigen::Matrix4f E, Eigen::Matrix4f Eg);
   __host__ __device__ bool broadphaseShape(Eigen::Matrix4f E1, Shape *other,
                                            Eigen::Matrix4f E2);
-  __host__ __device__ cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t>
-  narrowphaseShape(Eigen::Matrix4f E1, Shape *other, Eigen::Matrix4f E2);
-  Shape(ShapeCuboid cuboid);
+  __host__
+      __device__ cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t>
+      narrowphaseShape(Eigen::Matrix4f E1, Shape *other, Eigen::Matrix4f E2);
+  __host__ __device__ Eigen::Matrix<float, 6, 1> computeInertia(float density);
 };
 
 } // namespace apbd

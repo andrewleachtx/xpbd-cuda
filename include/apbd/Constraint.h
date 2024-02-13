@@ -89,6 +89,8 @@ public:
   __host__ __device__ Constraint(ConstraintJointRevolve revolve);
   __host__ __device__ Constraint &operator=(const Constraint &);
 
+  __host__ __device__ void init();
+
   __host__ __device__ void clear();
 
   __host__ __device__ void solve(float hs, bool doShockProp);

@@ -17,8 +17,8 @@ struct Contacts {
 };
 
 __host__ __device__ Contacts odeBoxBox(const Eigen::Matrix4f &M1,
-                   const Eigen::Vector3f &dimensions1,
-                   const Eigen::Matrix4f &M2,
-                   const Eigen::Vector3f &dimensions2);
+                                       const Eigen::Vector3f &dimensions1,
+                                       const Eigen::Matrix4f &M2,
+                                       const Eigen::Vector3f &dimensions2);
 
 #endif

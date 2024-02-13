@@ -28,4 +28,9 @@ __host__ __device__ Eigen::Quaternionf invert_q(const Eigen::Quaternionf &q);
 
 __host__ __device__ Eigen::Vector4f qMul(Eigen::Vector4f q1,
                                          Eigen::Vector4f q2);
+/**
+ * Gets the diagonal inertia of a cuboid with (width, height, depth)
+ */
+__host__ __device__ Eigen::Matrix<float, 6, 1>
+inertiaCuboid(Eigen::Vector3f whd, float density);
 } // namespace se3

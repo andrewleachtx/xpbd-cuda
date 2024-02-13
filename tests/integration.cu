@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
     // model.name = 'Rigid Body';
     // model.plotH = true;
     model.tEnd = 1;
-    model.h = 1 / 30;
+    model.h = 1. / 30.;
     model.substeps = 10;
     model.iters = 1;
     float density = 1.0;
@@ -44,5 +44,6 @@ int main(int argc, char **argv) {
     // model.bodies{end}.setInitVelocity([0 0 0 0 0 1]');
   }
   model.init();
-  model.simulate();
+  auto collider = apbd::Collider(&model);
+  model.simulate(&collider);
 }

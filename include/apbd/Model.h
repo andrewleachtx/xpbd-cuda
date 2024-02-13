@@ -4,9 +4,9 @@
 #include "Constraint.h"
 #include <cstddef>
 
+namespace apbd {
 class Collider;
 
-namespace apbd {
 const size_t MAX_LAYERS = 8;
 const size_t MAX_LAYER_SIZE = 4;
 
@@ -60,6 +60,6 @@ public:
   /**
    * Runs all simulations to completion
    */
-  __host__ __device__ void simulate(Collider collider);
+  __host__ __device__ void simulate(Collider *collider);
 };
 } // namespace apbd

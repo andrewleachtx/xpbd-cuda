@@ -49,6 +49,10 @@ Constraint &Constraint::operator=(const Constraint &other) {
   return *this;
 }
 
+void Constraint::init() {
+  // TODO: handle joint_revolve
+}
+
 void Constraint::clear() {
   switch (type) {
   case CONSTRAINT_COLLISION_GROUND: {

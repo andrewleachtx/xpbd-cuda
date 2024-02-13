@@ -28,6 +28,27 @@ Body::Body(BodyRigid rigid) : type(BODY_RIGID), data{.rigid{rigid}} {}
 Body::Body(BodyAffine affine)
     : type(BODY_AFFINE), data{.affine = std::move(affine)} {}
 
+void Body::init() {
+  switch (this->type) {
+  case BODY_AFFINE: {
+    // auto &data = this->data.affine;
+    // data.computeInertiaConst();
+    // data.x = data.xInit;
+    // data.x0 = data.x;
+    break;
+  }
+  case BODY_RIGID: {
+    auto &data = this->data.rigid;
+    data.computeInertiaConst();
+    data.x = data.xInit;
+    data.x0 = data.x;
+    break;
+  }
+  default:
+    break;
+  }
+}
+
 void Body::stepBDF1(unsigned int step, unsigned int substep, float hs,
                     Eigen::Vector3f gravity) {
   switch (this->type) {
@@ -35,17 +56,17 @@ void Body::stepBDF1(unsigned int step, unsigned int substep, float hs,
     auto &data = this->data.affine;
     auto xdot = data.computeVelocity(step, substep, hs);
     data.x0 = data.x;
-    auto axdot = xdot.block<3, 1>(0, 0);
-    auto aydot = xdot.block<3, 1>(3, 0);
-    auto azdot = xdot.block<3, 1>(6, 0);
-    auto pdot = xdot.block<3, 1>(9, 0);
+    Eigen::Vector3f axdot = xdot.block<3, 1>(0, 0);
+    Eigen::Vector3f aydot = xdot.block<3, 1>(3, 0);
+    Eigen::Vector3f azdot = xdot.block<3, 1>(6, 0);
+    Eigen::Vector3f pdot = xdot.block<3, 1>(9, 0);
     auto w = data.Wp;
     auto W = data.Wa;
     auto f = Eigen::Vector3f(0);
     auto t = Eigen::Matrix<float, 9, 1>::Zero(); // affine torque
-    auto tx = t.block<3, 1>(0, 0);
-    auto ty = t.block<3, 1>(3, 0);
-    auto tz = t.block<3, 1>(6, 0);
+    Eigen::Vector3f tx = t.block<3, 1>(0, 0);
+    Eigen::Vector3f ty = t.block<3, 1>(3, 0);
+    Eigen::Vector3f tz = t.block<3, 1>(6, 0);
     f = f + gravity / w; // Gravity
     // Integrate velocities
     axdot = axdot + hs * Eigen::Vector3f(W.array() * tx.array());
@@ -63,11 +84,11 @@ void Body::stepBDF1(unsigned int step, unsigned int substep, float hs,
   case BODY_RIGID: {
     auto &data = this->data.rigid;
     auto xdot = data.computeVelocity(step, substep, hs);
-    auto qdot = xdot.block<4, 1>(0, 0);
-    auto v = xdot.block<3, 1>(4, 0); // pdot
+    Eigen::Vector4f qdot = xdot.block<4, 1>(0, 0);
+    Eigen::Vector3f v = xdot.block<3, 1>(4, 0); // pdot
     data.x0 = data.x;
-    auto q = data.x.block<4, 1>(0, 0);
-    auto p = data.x.block<3, 1>(4, 0);
+    Eigen::Vector4f q = data.x.block<4, 1>(0, 0);
+    Eigen::Vector3f p = data.x.block<3, 1>(4, 0);
     auto w = se3::qdotToW(q, qdot); // angular velocity in body coords
     auto f = Vector3f(0);           // translational force in world space
     auto t = Vector3f(0);           // angular torque in body space
@@ -194,8 +215,8 @@ void Body::setInitVelocity(Eigen::Matrix<float, 6, 1> velocity) {
   case BODY_RIGID: {
     auto &data = this->data.rigid;
     Eigen::Quaternionf q = Eigen::Quaternionf(data.xInit.block<4, 1>(0, 0));
-    data.xInit.block<3, 1>(4, 0) = (q * velocity.block<3, 1>(3, 0));
-    data.xInit.block<4, 1>(0, 0) =
+    data.xdotInit.block<3, 1>(4, 0) = (q * velocity.block<3, 1>(3, 0));
+    data.xdotInit.block<4, 1>(0, 0) =
         se3::wToQdot(q.coeffs(), velocity.block<3, 1>(0, 0));
     break;
   }
@@ -243,15 +264,15 @@ Body::narrowphaseGround(Eigen::Matrix4f Eg) {
   case BODY_AFFINE: {
     // auto &data = this->data.affine;
     // TODO
-      return cuda::std::pair(cuda::std::array<CollisionGround, 8>(), 0);
+    return cuda::std::pair(cuda::std::array<CollisionGround, 8>(), 0);
   }
   case BODY_RIGID: {
     auto &data = this->data.rigid;
     Eigen::Matrix4f E = data.computeTransform();
-      return data.shape.narrowphaseGround(E, Eg);
+    return data.shape.narrowphaseGround(E, Eg);
   }
   default:
-      return cuda::std::pair(cuda::std::array<CollisionGround, 8>(), 0);
+    return cuda::std::pair(cuda::std::array<CollisionGround, 8>(), 0);
   }
 }
 
@@ -274,12 +295,13 @@ bool Body::broadphaseRigid(Body *other) {
   }
 }
 
-cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t> Body::narrowphaseRigid(Body *other) {
+cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t>
+Body::narrowphaseRigid(Body *other) {
   switch (this->type) {
   case BODY_AFFINE: {
     // auto &data = this->data.affine;
     // TODO
-      return cuda::std::pair(cuda::std::array<CollisionRigid, 8>(), 0);
+    return cuda::std::pair(cuda::std::array<CollisionRigid, 8>(), 0);
   }
   case BODY_RIGID: {
     auto &data = this->data.rigid;
@@ -318,6 +340,13 @@ vec7 BodyRigid::computeVelocity(unsigned int step, unsigned int substep,
   else
     return (this->x - this->x0) / hs;
 }
+
+void BodyRigid::computeInertiaConst() {
+  auto I = this->shape.computeInertia(this->density);
+  this->Mr = I.block<3, 1>(0, 0);
+  this->Mp = I(4);
+}
+
 Eigen::Vector3f BodyRigid::computePointVel(Eigen::Vector3f xl, float hs) {
   // xdot = this.computeVelocity(k,ks,hs);
   vec7 xdot = (this->x - this->x0) / hs;
@@ -329,23 +358,28 @@ Eigen::Vector3f BodyRigid::computePointVel(Eigen::Vector3f xl, float hs) {
   // v = R*cross(w,xl) + pdot
   return (q * w.cross(xl)) + pdot;
 }
+
 Eigen::Matrix4f BodyRigid::computeTransform() {
   Eigen::Matrix4f E = Eigen::Matrix4f::Identity();
   E.block<3, 3>(0, 0) =
       Eigen::Quaternionf(x.block<4, 1>(0, 0)).toRotationMatrix();
   E.block<3, 1>(3, 0) = x.block<3, 1>(4, 0);
+  return E;
 }
+
 void BodyRigid::applyJacobi() {
   this->x1 += this->dxJacobi;
   this->dxJacobi = vec7(0);
   this->regularize();
 }
+
 void BodyRigid::regularize() {
   this->x = this->x1;
   Eigen::Vector4f q = this->x.block<4, 1>(0, 0);
   q /= q.norm();
   this->x.block<4, 1>(0, 0) = q;
 }
+
 vec12 BodyAffine::computeVelocity(unsigned int step, unsigned int substep,
                                   float hs) {
   // TODO

@@ -163,4 +163,20 @@ Eigen::Quaternionf invert_q(const Eigen::Quaternionf &q) {
   return Eigen::Quaternionf(q.w(), tmp(0), tmp(1), tmp(2));
 }
 
+Eigen::Matrix<float, 6, 1> inertiaCuboid(Eigen::Vector3f whd, float density) {
+
+  Eigen::Matrix<float, 6, 1> m = Eigen::Matrix<float, 6, 1>::Zero();
+  float mass = density * whd.prod();
+  m(0) = (1. / 12.) * mass * Eigen::Vector2f(whd(2), whd(3)).transpose() *
+         Eigen::Vector2f(whd(2), whd(3));
+  m(1) = (1. / 12.) * mass * Eigen::Vector2f(whd(3), whd(1)).transpose() *
+         Eigen::Vector2f(whd(3), whd(1));
+  m(2) = (1. / 12.) * mass * Eigen::Vector2f(whd(1), whd(2)).transpose() *
+         Eigen::Vector2f(whd(1), whd(2));
+  m(3) = mass;
+  m(4) = mass;
+  m(5) = mass;
+  return m;
+}
+
 } // namespace se3

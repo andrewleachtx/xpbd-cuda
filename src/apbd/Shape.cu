@@ -1,6 +1,7 @@
+#include "JGT-float/smits_mul.h"
 #include "apbd/Shape.h"
 #include "collideBoxBox/odeBoxBox.h"
-#include "JGT-float/smits_mul.h"
+#include "se3/lib.h"
 
 namespace apbd {
 
@@ -158,14 +159,33 @@ float ShapeCuboid::raycast(Eigen::Vector3f x, Eigen::Vector3f n) {
   Eigen::Vector3f bmax = 0.5 * this->sides;
   Eigen::Vector3f bmin = -bmax;
   x = (1 - thresh) * x; // make the point go slightly inside the box
-  n = -n; // negate ray since it starts inside the box
+  n = -n;               // negate ray since it starts inside the box
   jgt_float::ray r;
   jgt_float::make_ray(x(1), x(2), x(3), n(1), n(2), n(3), &r);
   jgt_float::aabox a;
-  jgt_float::make_aabox(bmin(1), bmin(2), bmin(3), bmax(1), bmax(2), bmax(3), &a);
+  jgt_float::make_aabox(bmin(1), bmin(2), bmin(3), bmax(1), bmax(2), bmax(3),
+                        &a);
   float t;
   bool _hit = jgt_float::smits_mul(&r, &a, &t);
   return t;
+}
+
+Eigen::Matrix<float, 6, 1> Shape::computeInertia(float density) {
+  switch (type) {
+  case SHAPE_CUBOID:
+    switch (type) {
+    case SHAPE_CUBOID:
+      // I is the 6x1 diagonal rigid inertia, assuming that the frame origin is
+      // at the center of mass and the axes are oriented along the principal
+      // axes. We store the rotation on top of translations, so that I(1:3) is
+      // the rotational inertia and I(4:6) is the translational inertia.
+      return se3::inertiaCuboid(this->data.cuboid.sides, density);
+    default:
+      return Eigen::Matrix<float, 6, 1>();
+    }
+  default:
+    return Eigen::Matrix<float, 6, 1>();
+  }
 }
 
 } // namespace apbd

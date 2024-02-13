@@ -1,38 +1,51 @@
 #include "apbd/Collider.h"
+#include "config.h"
 
 namespace apbd {
 
+const size_t MAX_COLLISIONS = 64;
+
 Collider::Collider(Model *model)
-    : model(model), bp_cap_1(model->body_count),
-      bp_cap_2(model->body_count * 2), bp_count_1(0), bp_count_2(0),
-      bpList1(nullptr), bpList2(nullptr), collision_count(0),
-      collisions(nullptr) {
+    : bp_cap_1(model->body_count), bp_cap_2(model->body_count * 2),
+      bp_count_1(0), bp_count_2(0), bpList1(nullptr), bpList2(nullptr),
+      collision_count(0), collisions(nullptr) {
   // TODO: allocate bpLists on device/host
+#ifdef USE_CUDA
+  // TODO
+#else
+  bpList1 = new Body *[bp_cap_1];
+  bpList2 = new Body *[bp_cap_2];
+  collisions = reinterpret_cast<Constraint *>(
+      new char[MAX_COLLISIONS * sizeof(Constraint)]);
+#endif
 }
 
-void Collider::run() {
+void Collider::run(Model *model) {
   bp_count_1 = 0;
   bp_count_2 = 0;
   collision_count = 0;
-  this->broadphase();
-  this->narrowphase();
+  this->broadphase(model);
+  this->narrowphase(model);
 }
 
-void Collider::broadphase() {
-  Body *bodies = this->model->bodies;
+void Collider::broadphase(Model *model) {
+  Body *bodies = model->bodies;
 
-  for (size_t i = 0; i < this->model->body_count; i++) {
+  for (size_t i = 0; i < model->body_count && this->bp_count_1 < this->bp_cap_1;
+       i++) {
     Body *body = &bodies[i];
     if (body->collide()) {
-      if (body->broadphaseGround(this->model->ground_E)) {
+      if (body->broadphaseGround(model->ground_E)) {
         this->bpList1[this->bp_count_1++] = body;
       }
     }
   }
-  for (size_t i = 0; i < this->model->body_count; i++) {
+  for (size_t i = 0; i < model->body_count && this->bp_count_2 < this->bp_cap_2;
+       i++) {
     Body *body = &bodies[i];
     if (body->collide()) {
-      for (size_t j = i + 1; j < this->model->body_count; j++) {
+      for (size_t j = i + 1;
+           j < model->body_count && this->bp_count_2 < this->bp_cap_2; j++) {
         if (bodies[j].collide()) {
           if (body->broadphaseRigid(&bodies[j])) {
             this->bpList2[this->bp_count_2++] = body;
@@ -44,15 +57,16 @@ void Collider::broadphase() {
   }
 }
 
-void Collider::narrowphase() {
-  auto Eg = this->model->ground_E;
+void Collider::narrowphase(Model *model) {
+  auto Eg = model->ground_E;
 
-  for (size_t i = 1; i < this->bp_count_1; i++) {
+  for (size_t i = 0; i < this->bp_count_1; i++) {
     auto body = this->bpList1[i];
     auto cpair = body->narrowphaseGround(Eg);
     auto cdata = cpair.first;
     auto c_count = cpair.second;
-    for (size_t k = 1; k < c_count; k++) {
+    for (size_t k = 0; k < c_count && this->collision_count < MAX_COLLISIONS;
+         k++) {
       auto &c = cdata[k];
       switch (body->type) {
       case BODY_RIGID: {
@@ -66,13 +80,13 @@ void Collider::narrowphase() {
     }
   }
 
-  for (size_t i = 1; i < this->bp_count_2; i += 2) {
+  for (size_t i = 0; i < this->bp_count_2; i += 2) {
     auto body1 = this->bpList2[i];
     auto body2 = this->bpList2[i + 1];
     auto cpair = body1->narrowphaseRigid(body2);
     auto cdata = cpair.first;
     auto c_count = cpair.second;
-    for (size_t k = 1; k < c_count; k++) {
+    for (size_t k = 0; k < c_count; k++) {
       auto &c = cdata[k];
       switch (body1->type) {
       case BODY_RIGID: {

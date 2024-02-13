@@ -2,26 +2,46 @@
 #include "config.h"
 
 #include <iostream>
+#include <stdexcept>
 
 namespace apbd {
 
-Model::Model(): h(1/30), tEnd(1), substeps(10), bodies(nullptr), body_count(0), constraints(nullptr), constraint_count(0), constraint_layers(nullptr), layer_count(0), constraint_layer_sizes(nullptr), body_layers(nullptr), body_layer_sizes(nullptr), gravity(0,0,-980), iters(1), ground_E(Eigen::Matrix4f::Zero()), ground_size(10), axis() {}
+Model::Model()
+    : h(1. / 30.), tEnd(1), substeps(10), bodies(nullptr), body_count(0),
+      constraints(nullptr), constraint_count(0), constraint_layers(nullptr),
+      layer_count(0), constraint_layer_sizes(nullptr), body_layers(nullptr),
+      body_layer_sizes(nullptr), gravity(0, 0, -980), iters(1),
+      ground_E(Eigen::Matrix4f::Zero()), ground_size(10), axis() {}
 
 void Model::init() {
-  // create bodies
+  // initialize bodies
+  // if (this->bodies == nullptr) {
+  //   throw std::runtime_error("Bodies not initialized");
+  // }
+  for (size_t i = 0; i < this->body_count; i++) {
+    this->bodies[i].init();
+  }
   // create constraints
+  // if (this->constraints == nullptr && this->constraint_count) {
+  //   throw std::runtime_error("Constraints not initialized");
+  // }
+  for (size_t i = 0; i < this->constraint_count; i++) {
+    this->constraints[i].init();
+  }
   // calculate parameters
-  this->steps = 0;
-  this->substeps = 0;
+  this->steps = ceil(this->tEnd / this->h);
+  // this->hs = this->h / this->substeps;
+  // this->k = 0;
+  // this->ks
 }
 
-void Model::simulate() {
+void Model::simulate(Collider *collider) {
   float time = 0;
   float hs = this->h / static_cast<float>(this->substeps);
   // std::cout << this->steps << ", " << this->substeps << std::endl;
   for (unsigned int step = 0; step < this->steps; step++) {
     this->clearBodyShockPropInfo();
-    this->collider->run();
+    collider->run(this);
     this->constructConstraintGraph();
     for (unsigned int substep = 0; substep < this->substeps; substep++) {
       this->stepBDF1(step, substep, hs);
