@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.18..3.27)
 project(pbd-rigidbody-cuda VERSION 0.1
     DESCRIPTION "A CUDA-accelerated Differential XPBD Framework"
     LANGUAGES CUDA CXX)
-
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)

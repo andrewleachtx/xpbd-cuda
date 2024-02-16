@@ -34,6 +34,7 @@ struct BodyRigid {
   float Mp;
 
   BodyRigid(Shape shape, float density);
+  BodyRigid(Shape shape, float density, bool collide, float mu);
 
   __host__ __device__ vec7 computeVelocity(unsigned int step,
                                            unsigned int substep, float hs);
@@ -88,6 +89,7 @@ public:
 
   Body(BodyRigid rigid);
   Body(BodyAffine affine);
+  Body &operator=(const apbd::Body &&);
 
   void init();
 

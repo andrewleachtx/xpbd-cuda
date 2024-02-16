@@ -6,6 +6,17 @@
 namespace apbd {
 
 Shape::Shape(ShapeCuboid cuboid) : type(SHAPE_CUBOID), data{.cuboid = cuboid} {}
+Shape &Shape::operator=(const Shape &other) {
+  this->type = other.type;
+  switch (type) {
+  case SHAPE_CUBOID: {
+    this->data.cuboid = other.data.cuboid;
+  }
+  default:
+    break;
+  }
+  return *this;
+}
 
 bool Shape::broadphaseGround(Eigen::Matrix4f E, Eigen::Matrix4f Eg) {
   switch (type) {

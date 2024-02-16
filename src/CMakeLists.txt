@@ -32,7 +32,12 @@ target_include_directories(apbd-lib PUBLIC ../include)
 
 target_link_libraries(apbd-lib PUBLIC se3-lib svd3_cuda jgt-lib cbb-lib)
 
+# utils
+add_library(utils-lib util.cu ../include/util.h)
+
+target_include_directories(utils-lib PUBLIC ../include)
+
 source_group(
   TREE "${PROJECT_SOURCE_DIR}/include"
   PREFIX "Header Files"
-  FILES ${CBB_HEADER_LIST} ${SE3_HEADER_LIST} ${APBD_HEADER_LIST} ${JGT_HEADER_LIST})
+  FILES ../include/util.h ${CBB_HEADER_LIST} ${SE3_HEADER_LIST} ${APBD_HEADER_LIST} ${JGT_HEADER_LIST})

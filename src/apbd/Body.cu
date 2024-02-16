@@ -27,6 +27,20 @@ using Eigen::Vector3f;
 Body::Body(BodyRigid rigid) : type(BODY_RIGID), data{.rigid{rigid}} {}
 Body::Body(BodyAffine affine)
     : type(BODY_AFFINE), data{.affine = std::move(affine)} {}
+Body &Body::operator=(const Body &&other) {
+  this->type = other.type;
+  switch (type) {
+  case BODY_AFFINE:
+    this->data.affine = std::move(other.data.affine);
+    break;
+  case BODY_RIGID:
+    this->data.rigid = std::move(other.data.rigid);
+    break;
+  default:
+    break;
+  }
+  return *this;
+}
 
 void Body::init() {
   switch (this->type) {
@@ -332,6 +346,8 @@ bool Body::collide() {
 
 BodyRigid::BodyRigid(Shape shape, float density)
     : shape(shape), density(density) {}
+BodyRigid::BodyRigid(Shape shape, float density, bool collide, float mu)
+    : shape(shape), density(density), collide(collide), mu(mu) {}
 
 vec7 BodyRigid::computeVelocity(unsigned int step, unsigned int substep,
                                 float hs) {

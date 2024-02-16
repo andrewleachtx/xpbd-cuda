@@ -1,5 +1,5 @@
 #include "apbd/Model.h"
-#include "config.h"
+#include "util.h"
 
 #include <iostream>
 #include <stdexcept>
@@ -11,7 +11,20 @@ Model::Model()
       constraints(nullptr), constraint_count(0), constraint_layers(nullptr),
       layer_count(0), constraint_layer_sizes(nullptr), body_layers(nullptr),
       body_layer_sizes(nullptr), gravity(0, 0, -980), iters(1),
-      ground_E(Eigen::Matrix4f::Zero()), ground_size(10), axis() {}
+      ground_E(Eigen::Matrix4f::Zero()), ground_size(10), axis(), steps(0) {}
+
+Model::Model(const Model &other)
+    : h(other.h), tEnd(other.tEnd), substeps(other.substeps), bodies(nullptr),
+      body_count(other.body_count), constraints(other.constraints),
+      constraint_count(other.constraint_count), constraint_layers(nullptr),
+      layer_count(other.layer_count), constraint_layer_sizes(nullptr),
+      body_layers(nullptr), body_layer_sizes(nullptr), gravity(other.gravity),
+      iters(other.iters), ground_E(other.ground_E),
+      ground_size(other.ground_size), axis(other.axis), steps(other.steps) {
+  size_t size = other.body_count * sizeof(Body);
+  bodies = (Body *)alloc_device(size);
+  memcpy_device(bodies, other.bodies, size);
+}
 
 void Model::init() {
   // initialize bodies

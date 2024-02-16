@@ -46,6 +46,7 @@ public:
     // }
   }
   Shape(ShapeCuboid cuboid);
+  Shape &operator=(const Shape &);
 
   __host__ __device__ bool broadphaseGround(Eigen::Matrix4f E,
                                             Eigen::Matrix4f Eg);
