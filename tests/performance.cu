@@ -15,7 +15,7 @@ void run_cpu_thread(apbd::Model model, int sims, int processor_count, int id) {
     auto collider = apbd::Collider(&model);
     model.simulate(&collider);
   }
-  cout << "done: " << id << endl;
+  // cout << "done: " << id << endl;
 }
 
 void cpu_run_group(apbd::Model model, int sims) {
@@ -24,14 +24,17 @@ void cpu_run_group(apbd::Model model, int sims) {
     throw runtime_error("Failed to detect concurrency.");
   }
   auto handles = std::vector<std::thread>();
+  auto t1 = Clock::now();
   for (int i = 0; i < processor_count; i++) {
     handles.push_back(
         std::thread(run_cpu_thread, model, sims, processor_count, i));
   }
   for (auto &h : handles) {
-    cout << "waiting..." << endl;
+    // cout << "waiting..." << endl;
     h.join();
   }
+  auto t2 = Clock::now();
+  cout << "Kernel took: " << (t2 - t1).count() << '\t';
 }
 
 struct MainState {
@@ -127,9 +130,12 @@ int main(int argc, char *argv[]) {
   auto state = parse_arguments(argc, argv);
   auto model = createModelSample(state.model_id);
 
+  auto t1 = Clock::now();
 #ifdef USE_CUDA
   // TODO
 #else
   cpu_run_group(model, state.scene_count);
 #endif
+  auto t2 = Clock::now();
+  cout << "Simulation took: " << (t2 - t1).count() << '\n';
 }
