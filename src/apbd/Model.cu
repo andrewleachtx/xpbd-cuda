@@ -21,9 +21,16 @@ Model::Model(const Model &other)
       body_layers(nullptr), body_layer_sizes(nullptr), gravity(other.gravity),
       iters(other.iters), ground_E(other.ground_E),
       ground_size(other.ground_size), axis(other.axis), steps(other.steps) {
+  cudaPointerAttributes attributes;
+  CUDA_CHECK(cudaPointerGetAttributes(&attributes, other.bodies));
   size_t size = other.body_count * sizeof(Body);
-  bodies = (Body *)alloc_device(size);
-  memcpy_device(bodies, other.bodies, size);
+  if (attributes.type == cudaMemoryTypeDevice) {
+    bodies = alloc_device<Body>(other.body_count);
+    memcpy_device(bodies, other.bodies, size);
+  } else {
+    bodies = new Body[other.body_count];
+    memcpy(bodies, other.bodies, size);
+  }
 }
 
 void Model::init() {
@@ -46,6 +53,12 @@ void Model::init() {
   // this->hs = this->h / this->substeps;
   // this->k = 0;
   // this->ks
+}
+
+void Model::move_to_device() {
+  bodies = move_array_to_device(bodies, body_count);
+  constraints = move_array_to_device(constraints, constraint_count);
+  // TODO: layers
 }
 
 void Model::simulate(Collider *collider) {

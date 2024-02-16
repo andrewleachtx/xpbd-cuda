@@ -9,6 +9,7 @@ typedef Eigen::Matrix<float, 7, 1> vec7;
 typedef Eigen::Matrix<float, 12, 1> vec12;
 
 enum BODY_TYPE {
+  BODY_INVALID = 0,
   BODY_AFFINE,
   BODY_RIGID,
 };
@@ -78,6 +79,7 @@ struct BodyAffine {
 };
 
 union _BodyInner {
+  int _dummy;
   BodyAffine affine;
   BodyRigid rigid;
 };
@@ -87,6 +89,7 @@ public:
   BODY_TYPE type;
   _BodyInner data;
 
+  Body();
   Body(BodyRigid rigid);
   Body(BodyAffine affine);
   Body &operator=(const apbd::Body &&);

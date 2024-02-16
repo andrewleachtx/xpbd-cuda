@@ -1,16 +1,15 @@
 #!/bin/bash
-#
 
-file=output/prof/times_$(git log --oneline | head -n 1 | awk '{ print $1 }')_autogen.csv
+file=output/profiling/times_$(git log --oneline | head -n 1 | awk '{ print $1 }')_autogen.csv
 
 echo Building...
 
-cmake --build build/release -t performance
+cmake --build build/release --parallel -t performance
 
 echo Testing...
 echo
 
-echo "scene count\tsimulation time\ttotal time" | tee $file
+echo -e "scene count\tsimulation time\ttotal time" | tee $file
 
 for sim_count in {10..82}
   do

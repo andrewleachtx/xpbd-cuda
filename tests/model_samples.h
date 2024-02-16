@@ -31,7 +31,8 @@ apbd::Model createModelSample(int modelID) {
     // model.view = [0 0];
 
     size_t n = 9;
-    model.bodies = (apbd::Body *)alloc_device(n * sizeof(apbd::Body));
+    model.bodies = new apbd::Body[n];
+    model.body_count = n;
     for (size_t i = 0; i < n; i++) {
       model.bodies[i] = apbd::Body(
           apbd::BodyRigid(apbd::ShapeCuboid{sides}, density, true, mu));
@@ -67,9 +68,9 @@ apbd::Model createModelSample(int modelID) {
     // model.drawHz = 30;
 
     model.body_count = 1;
-    model.bodies = (apbd::Body *)alloc_device(1 * sizeof(apbd::Body));
-    model.bodies[0] = std::move(apbd::Body{
-        apbd::Body(apbd::BodyRigid(apbd::ShapeCuboid{sides}, density))});
+    model.bodies = new apbd::Body[1];
+    model.bodies[0] = apbd::Body{
+        apbd::Body(apbd::BodyRigid(apbd::ShapeCuboid{sides}, density))};
 
     Eigen::Matrix4f E = Eigen::Matrix4f::Identity();
     Eigen::Matrix3f R = se3::aaToMat(Eigen::Vector3f(1, 1, 1), M_PI / 4);

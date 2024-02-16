@@ -57,6 +57,7 @@ public:
    * constructs a copy of the model, only duplicating data that cannot be shared
    */
   Model(const Model &other);
+  void move_to_device();
   /**
    * Initializes the model objects based on configuration
    */

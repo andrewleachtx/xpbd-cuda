@@ -24,6 +24,7 @@ __host__ __device__ void svd_step(Eigen::Matrix3f &A) {
 
 using Eigen::Vector3f;
 
+Body::Body() : type(BODY_INVALID), data{0} {}
 Body::Body(BodyRigid rigid) : type(BODY_RIGID), data{.rigid{rigid}} {}
 Body::Body(BodyAffine affine)
     : type(BODY_AFFINE), data{.affine = std::move(affine)} {}

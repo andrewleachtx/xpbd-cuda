@@ -7,6 +7,11 @@ else()
     add_compile_options(-Wall -Wextra -pedantic -Werror)
 endif()
 
+set_property(TARGET integration PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+set_property(TARGET performance PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+set_property(TARGET integration PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+set_property(TARGET performance PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+
 target_link_libraries(integration PRIVATE apbd-lib utils-lib)
 target_link_libraries(performance PRIVATE apbd-lib utils-lib)
 

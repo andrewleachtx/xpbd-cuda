@@ -9,6 +9,27 @@
 using std::cout, std::endl, std::string, std::runtime_error;
 typedef std::chrono::high_resolution_clock Clock;
 
+__global__ void kernel(apbd::Model model, apbd::Collider collider, int sims) {
+  model.simulate(&collider);
+}
+
+void run_kernel(apbd::Model model, int sims) {
+  std::cout << "kernel start" << std::endl;
+  auto t1 = Clock::now();
+  // const size_t shared_size = c.constraints.size() * sizeof(Constraint);
+  const size_t shared_size = 0;
+  // std::cout << "kernel shared_size: " << shared_size << " = " <<
+  // c.constraints.size() << " * " << sizeof(Constraint) << std::endl;
+  model.move_to_device();
+  auto collider = apbd::Collider(&model);
+  kernel<<<(sims + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, shared_size>>>(
+      model, collider, sims);
+  CUDA_CHECK(cudaGetLastError());
+  CUDA_CHECK(cudaDeviceSynchronize());
+  auto t2 = Clock::now();
+  std::cout << "Kernel took: " << (t2 - t1).count() << '\t';
+}
+
 void run_cpu_thread(apbd::Model model, int sims, int processor_count, int id) {
   for (int i = id; i < sims; i += processor_count) {
     // cout << "simulating scene: " << i << endl;
@@ -132,8 +153,10 @@ int main(int argc, char *argv[]) {
 
   auto t1 = Clock::now();
 #ifdef USE_CUDA
-  // TODO
+  cout << "Running with CUDA" << endl;
+  run_kernel(model, state.scene_count);
 #else
+  cout << "Running on CPU" << endl;
   cpu_run_group(model, state.scene_count);
 #endif
   auto t2 = Clock::now();

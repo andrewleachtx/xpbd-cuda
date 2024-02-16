@@ -1,23 +1,15 @@
 #include "apbd/Collider.h"
-#include "config.h"
+#include "util.h"
 
 namespace apbd {
-
-const size_t MAX_COLLISIONS = 64;
 
 Collider::Collider(Model *model)
     : bp_cap_1(model->body_count), bp_cap_2(model->body_count * 2),
       bp_count_1(0), bp_count_2(0), bpList1(nullptr), bpList2(nullptr),
       collision_count(0), collisions(nullptr) {
-  // TODO: allocate bpLists on device/host
-#ifdef USE_CUDA
-  // TODO
-#else
-  bpList1 = new Body *[bp_cap_1];
-  bpList2 = new Body *[bp_cap_2];
-  collisions = reinterpret_cast<Constraint *>(
-      new char[MAX_COLLISIONS * sizeof(Constraint)]);
-#endif
+  bpList1 = alloc_device<Body *>(bp_cap_1);
+  bpList2 = alloc_device<Body *>(bp_cap_2);
+  collisions = alloc_device<Constraint>(MAX_COLLISIONS);
 }
 
 void Collider::run(Model *model) {
