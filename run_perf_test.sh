@@ -24,7 +24,7 @@ for sim_count in {10..82}
     sim_count=$(calc 'int(2^('$sim_count'/5))' | awk '{print $1}')
     ./build/$version/tests/performance -m 0 -s $sim_count \
       | grep "Kernel took:" \
-      | awk '{print("'$sim_count',",$3,",",$6)}' \
+      | awk '{printf("'$sim_count',%s,%s\n",$3,$6)}' \
       | tee -a $file | awk -F ',' '{print $1,"\t",$2,"\t",$3}' \
       || (echo "Error! $sim_count"; exit 1)
   done
