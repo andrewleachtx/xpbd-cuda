@@ -16,4 +16,5 @@ Where:
     - 2x uses $2^{n/5}$ where $n$ is from 10 to 82 (inclusive)
     - 3x uses $2^{n/4}$
 - **n** is the number for that run; each test is run multiple times to reduce noise
+    - "aggregate" means that this is the average of all runs, created using `data_processing.py`
 
