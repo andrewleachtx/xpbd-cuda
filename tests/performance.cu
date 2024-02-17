@@ -9,34 +9,55 @@
 using std::cout, std::endl, std::string, std::runtime_error;
 typedef std::chrono::high_resolution_clock Clock;
 
-__global__ void kernel(apbd::Model model, apbd::Collider collider, int sims) {
-  model.simulate(&collider);
+__global__ void kernel(apbd::Model model, apbd::Body *body_buffer,
+                       apbd::Body **body_ptr_buffer,
+                       apbd::Constraint *constraint_buffer, int sims) {
+  // get this scene ID
+  size_t scene_id = blockIdx.x * blockDim.x + threadIdx.x;
+  // make a copy of the model
+  apbd::Model thread_model =
+      apbd::Model::clone_with_buffers(model, scene_id, body_buffer);
+  // create a thread-local collider
+  auto collider = apbd::Collider(&thread_model, scene_id, body_ptr_buffer,
+                                 constraint_buffer);
+  // simulate
+  thread_model.simulate(&collider);
 }
 
 void run_kernel(apbd::Model model, int sims) {
-  std::cout << "kernel start" << std::endl;
-  auto t1 = Clock::now();
+  cout << "thread blocks: " << (sims + BLOCK_SIZE - 1) / BLOCK_SIZE << endl;
+
   // const size_t shared_size = c.constraints.size() * sizeof(Constraint);
   const size_t shared_size = 0;
   // std::cout << "kernel shared_size: " << shared_size << " = " <<
   // c.constraints.size() << " * " << sizeof(Constraint) << std::endl;
+
+  size_t body_buffer_size = sims * model.body_count;
+  apbd::Body *body_buffer = alloc_device<apbd::Body>(body_buffer_size);
+  apbd::Body **body_ptr_buffer = nullptr;
+  apbd::Constraint *constraint_buffer = nullptr;
+  apbd::Collider::allocate_buffers(model, sims, body_ptr_buffer,
+                                   constraint_buffer);
+
   model.move_to_device();
-  auto collider = apbd::Collider(&model);
+
+  std::cout << "kernel start" << std::endl;
+  auto t1 = Clock::now();
+
   kernel<<<(sims + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, shared_size>>>(
-      model, collider, sims);
+      model, body_buffer, body_ptr_buffer, constraint_buffer, sims);
   CUDA_CHECK(cudaGetLastError());
   CUDA_CHECK(cudaDeviceSynchronize());
+
   auto t2 = Clock::now();
   std::cout << "Kernel took: " << (t2 - t1).count() << '\t';
 }
 
 void run_cpu_thread(apbd::Model model, int sims, int processor_count, int id) {
   for (int i = id; i < sims; i += processor_count) {
-    // cout << "simulating scene: " << i << endl;
     auto collider = apbd::Collider(&model);
     model.simulate(&collider);
   }
-  // cout << "done: " << id << endl;
 }
 
 void cpu_run_group(apbd::Model model, int sims) {
@@ -51,7 +72,6 @@ void cpu_run_group(apbd::Model model, int sims) {
         std::thread(run_cpu_thread, model, sims, processor_count, i));
   }
   for (auto &h : handles) {
-    // cout << "waiting..." << endl;
     h.join();
   }
   auto t2 = Clock::now();

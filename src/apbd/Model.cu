@@ -21,16 +21,20 @@ Model::Model(const Model &other)
       body_layers(nullptr), body_layer_sizes(nullptr), gravity(other.gravity),
       iters(other.iters), ground_E(other.ground_E),
       ground_size(other.ground_size), axis(other.axis), steps(other.steps) {
+#ifdef __CUDA_ARCH__
+  // we are on the device; don't copy the bodies
+#else
   cudaPointerAttributes attributes;
   CUDA_CHECK(cudaPointerGetAttributes(&attributes, other.bodies));
-  size_t size = other.body_count * sizeof(Body);
   if (attributes.type == cudaMemoryTypeDevice) {
     bodies = alloc_device<Body>(other.body_count);
-    memcpy_device(bodies, other.bodies, size);
+    memcpy_device(bodies, other.bodies, other.body_count);
   } else {
+    size_t size = other.body_count * sizeof(Body);
     bodies = new Body[other.body_count];
     memcpy(bodies, other.bodies, size);
   }
+#endif
 }
 
 void Model::init() {
@@ -59,6 +63,15 @@ void Model::move_to_device() {
   bodies = move_array_to_device(bodies, body_count);
   constraints = move_array_to_device(constraints, constraint_count);
   // TODO: layers
+}
+
+__device__ Model Model::clone_with_buffers(const Model &other, size_t scene_id,
+                                           Body *body_buffer) {
+  Model new_model(other);
+
+  new_model.bodies = &body_buffer[other.body_count * scene_id];
+  memcpy_device(new_model.bodies, other.bodies, other.body_count);
+  return new_model;
 }
 
 void Model::simulate(Collider *collider) {

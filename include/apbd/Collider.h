@@ -21,7 +21,13 @@ class Collider {
 
 public:
   Collider(Model *model);
+  __device__ __host__ Collider(Model *model, size_t scene_id,
+                               Body **body_ptr_buffer,
+                               Constraint *constraint_buffer);
   __device__ __host__ void run(Model *model);
+  static void allocate_buffers(Model &model, int sim_count,
+                               Body **&body_ptr_buffer,
+                               Constraint *&constraint_buffer);
   static __device__ __host__ std::pair<Eigen::Vector3f, Eigen::Vector3f>
   generateTangents(Eigen::Vector3f nor);
 };

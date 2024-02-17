@@ -20,7 +20,13 @@ template <typename T> T *alloc_device(size_t count) {
   return reinterpret_cast<T *>(alloc_device_bytes(bytes));
 }
 
-void memcpy_device(void *__restrict dest, void *__restrict src, size_t bytes);
+__host__ __device__ void
+memcpy_device_bytes(void *__restrict dest, void *__restrict src, size_t bytes);
+template <typename T>
+__host__ __device__ void memcpy_device(T *__restrict dest, T *__restrict src,
+                                       size_t count) {
+  memcpy_device_bytes(dest, src, count * sizeof(T));
+}
 void memcpy_host_device(void *__restrict dest, void *__restrict src,
                         size_t bytes);
 

@@ -56,8 +56,10 @@ public:
   /**
    * constructs a copy of the model, only duplicating data that cannot be shared
    */
-  Model(const Model &other);
+  __host__ __device__ Model(const Model &other);
   void move_to_device();
+  __device__ static Model
+  clone_with_buffers(const Model &other, size_t scene_id, Body *body_buffer);
   /**
    * Initializes the model objects based on configuration
    */
