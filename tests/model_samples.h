@@ -10,6 +10,38 @@ apbd::Model createModelSample(int modelID) {
 
   switch (modelID) {
 
+  case -1: {
+    model.h = 5e-3;
+    model.tEnd = model.h * 10;
+    model.substeps = 2;
+    model.iters = 10;
+    float density = 1.0;
+    float w = 1;
+    Eigen::Vector3f sides{w, w, w};
+    model.gravity = Eigen::Vector3f(0, 0, -980).transpose();
+    model.ground_E = Eigen::Matrix4f::Identity();
+    float mu = 0.01;
+
+    model.ground_size = 10;
+    model.axis = 5 * Eigen::Matrix<float, 6, 1>(-1, 1, -1, 1, 0, 1);
+
+    model.body_count = 1;
+    model.bodies = new apbd::Body[1];
+    model.bodies[0] =
+        apbd::Body(apbd::BodyRigid(apbd::ShapeCuboid{sides}, density));
+
+    Eigen::Matrix4f E = Eigen::Matrix4f::Identity();
+    Eigen::Matrix3f R = se3::aaToMat(Eigen::Vector3f(1, 1, 1), M_PI / 4);
+    E.block<3, 3>(0, 0) = R;
+    E.block<3, 1>(0, 3) = Eigen::Vector3f(0, 0, 5);
+    model.bodies[0].setInitTransform(E);
+    Eigen::Vector3f x1 = R.transpose() * Eigen::Vector3f(3, -4, 5);
+    Eigen::Vector3f x2 = R.transpose() * Eigen::Vector3f(0, 0, 5);
+    Eigen::Matrix<float, 6, 1> v;
+    v << x1, x2;
+    model.bodies[0].setInitVelocity(v);
+    break;
+  }
   case 0: {
     // model.name = 'Rigid Collisions';
     // model.plotH = false;
@@ -47,9 +79,10 @@ apbd::Model createModelSample(int modelID) {
             Eigen::Matrix<float, 6, 1>(1, 0, 0, 0, 0, 0));
       }
     }
+    break;
   }
 
-  case 10:
+  case 10: {
     // model.name = 'Rigid Body';
     // model.plotH = true;
     model.tEnd = 1;
@@ -83,6 +116,8 @@ apbd::Model createModelSample(int modelID) {
     v << x1, x2;
     model.bodies[0].setInitVelocity(v);
     // model.bodies{end}.setInitVelocity([0 0 0 0 0 1]');
+    break;
+  }
   }
   model.init();
 

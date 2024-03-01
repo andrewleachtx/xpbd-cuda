@@ -77,7 +77,7 @@ void Body::stepBDF1(unsigned int step, unsigned int substep, float hs,
     Eigen::Vector3f pdot = xdot.block<3, 1>(9, 0);
     auto w = data.Wp;
     auto W = data.Wa;
-    auto f = Eigen::Vector3f(0);
+    Vector3f f = Eigen::Vector3f::Zero();
     auto t = Eigen::Matrix<float, 9, 1>::Zero(); // affine torque
     Eigen::Vector3f tx = t.block<3, 1>(0, 0);
     Eigen::Vector3f ty = t.block<3, 1>(3, 0);
@@ -105,8 +105,8 @@ void Body::stepBDF1(unsigned int step, unsigned int substep, float hs,
     Eigen::Vector4f q = data.x.block<4, 1>(0, 0);
     Eigen::Vector3f p = data.x.block<3, 1>(4, 0);
     auto w = se3::qdotToW(q, qdot); // angular velocity in body coords
-    auto f = Vector3f(0);           // translational force in world space
-    auto t = Vector3f(0);           // angular torque in body space
+    Vector3f f = Vector3f::Zero();  // translational force in world space
+    Vector3f t = Vector3f::Zero();  // angular torque in body space
     auto m = data.Mp;               // scalar mass
     auto I = data.Mr;               // inertia in body space
     Eigen::Vector3f Iw =
@@ -346,9 +346,17 @@ bool Body::collide() {
 }
 
 BodyRigid::BodyRigid(Shape shape, float density)
-    : shape(shape), density(density) {}
+    : xInit(vec7::Zero()), xdotInit(vec7::Zero()), x(vec7::Zero()),
+      x0(vec7::Zero()), x1(vec7::Zero()), x1_0(vec7::Zero()),
+      dxJacobi(vec7::Zero()), dxJacobiShock(vec7::Zero()), collide(false),
+      mu(0.0), layer(99), shape(shape), density(density),
+      Mr(Eigen::Vector3f::Zero()), Mp(0) {}
 BodyRigid::BodyRigid(Shape shape, float density, bool collide, float mu)
-    : shape(shape), density(density), collide(collide), mu(mu) {}
+    : xInit(vec7::Zero()), xdotInit(vec7::Zero()), x(vec7::Zero()),
+      x0(vec7::Zero()), x1(vec7::Zero()), x1_0(vec7::Zero()),
+      dxJacobi(vec7::Zero()), dxJacobiShock(vec7::Zero()), collide(collide),
+      mu(mu), layer(99), shape(shape), density(density),
+      Mr(Eigen::Vector3f::Zero()), Mp(0) {}
 
 vec7 BodyRigid::computeVelocity(unsigned int step, unsigned int substep,
                                 float hs) {
@@ -404,6 +412,26 @@ vec12 BodyAffine::computeVelocity(unsigned int step, unsigned int substep,
 
 Eigen::Matrix4f BodyAffine::computeInitTransform() {
   // TODO
+}
+
+void Body::write_state() {
+  Vector3f position;
+  Eigen::Vector4f rotation;
+  switch (this->type) {
+  case BODY_AFFINE: {
+    return;
+  }
+  case BODY_RIGID: {
+    auto &data = this->data.rigid;
+    position = data.x.block<3, 1>(0, 0);
+    rotation = data.x.block<4, 1>(3, 0);
+    break;
+  }
+  default:
+    return;
+  }
+  printf("%f %f %f r %f %f %f %f", position(0), position(1), position(2),
+         rotation(0), rotation(1), rotation(2), rotation(3));
 }
 
 } // namespace apbd

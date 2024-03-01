@@ -48,6 +48,9 @@ source_group(
   FILES ../include/util.h ${CBB_HEADER_LIST} ${SE3_HEADER_LIST} ${APBD_HEADER_LIST} ${JGT_HEADER_LIST})
 
 if (USE_CUDA)
-  target_compile_definitions(utils-lib PUBLIC USE_CUDA )
+  target_compile_definitions(utils-lib PUBLIC USE_CUDA)
+endif()
+if (WRITE)
+  target_compile_definitions(utils-lib PUBLIC WRITE)
 endif()
 

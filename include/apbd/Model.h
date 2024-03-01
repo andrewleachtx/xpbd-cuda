@@ -68,5 +68,10 @@ public:
    * Runs all simulations to completion
    */
   __host__ __device__ void simulate(Collider *collider);
+
+  /**
+   * writes current state out for debugging
+   */
+  void write_state(unsigned int step);
 };
 } // namespace apbd

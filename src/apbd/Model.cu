@@ -10,8 +10,9 @@ Model::Model()
     : h(1. / 30.), tEnd(1), substeps(10), bodies(nullptr), body_count(0),
       constraints(nullptr), constraint_count(0), constraint_layers(nullptr),
       layer_count(0), constraint_layer_sizes(nullptr), body_layers(nullptr),
-      body_layer_sizes(nullptr), gravity(0, 0, -980), iters(1),
-      ground_E(Eigen::Matrix4f::Zero()), ground_size(10), axis(), steps(0) {}
+      body_layer_sizes(nullptr), gravity(0.0, 0.0, -980.0), iters(1),
+      ground_E(Eigen::Matrix4f::Zero()), ground_size(10),
+      axis(Eigen::Matrix<float, 6, 1>::Zero()), steps(0) {}
 
 Model::Model(const Model &other)
     : h(other.h), tEnd(other.tEnd), substeps(other.substeps), bodies(nullptr),
@@ -90,6 +91,7 @@ void Model::simulate(Collider *collider) {
     }
     this->computeEnergies();
     // draw ?
+    this->write_state(step);
   }
 }
 
@@ -174,6 +176,18 @@ void Model::solveConGS(float hs) {
     }
   }
 }
-void Model::computeEnergies() {}
+void Model::computeEnergies() { /*TODO*/
+}
+
+void Model::write_state(unsigned int step) {
+#ifdef WRITE
+  printf("Step %d\n", step);
+  for (size_t i = 0; i < body_count; i++) {
+    printf("%d ", i);
+    bodies[i].write_state();
+    printf("\n");
+  }
+#endif
+}
 
 } // namespace apbd

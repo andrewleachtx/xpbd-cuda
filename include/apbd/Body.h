@@ -121,6 +121,8 @@ public:
       narrowphaseRigid(Body *other);
 
   __host__ __device__ Eigen::Matrix4f computeTransform();
+
+  __host__ __device__ void write_state();
 };
 
 } // namespace apbd

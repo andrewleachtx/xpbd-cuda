@@ -6,6 +6,7 @@ project(pbd-rigidbody-cuda VERSION 0.1
     LANGUAGES CUDA CXX)
 
 option(USE_CUDA "Use CUDA implementation instead of CPU" ON)
+option(WRITE "Write the state of the simulation to stdout" OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
