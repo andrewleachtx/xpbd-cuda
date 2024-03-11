@@ -213,7 +213,7 @@ void Model::write_state(unsigned int step) {
 
 void Model::print_config() {
   printf("Body count: %lu\n"
-         "Constriaint count: %lu\n"
+         "Constraint count: %lu\n"
          "Gravity: [%f %f %f]\n"
          "Ground size: %f\n"
          "Time Step: %f\n"

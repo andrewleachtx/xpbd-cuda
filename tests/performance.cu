@@ -19,7 +19,6 @@ __global__ void kernel(apbd::Model model, apbd::Body *body_buffer,
   // make a copy of the model
   apbd::Model thread_model =
       apbd::Model::clone_with_buffers(model, scene_id, body_buffer);
-  thread_model.print_config();
   // create a thread-local collider
   auto collider = apbd::Collider(&thread_model, scene_id, body_ptr_buffer,
                                  constraint_buffer);
