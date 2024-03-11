@@ -26,14 +26,16 @@ struct ConstraintGround {
   Eigen::Vector3f xw;
   Eigen::Vector3f vw;
 
-  ConstraintGround(BodyRigid *body, Eigen::Matrix4f Eg, float d,
-                   Eigen::Vector3f xl, Eigen::Vector3f xw, Eigen::Vector3f nw,
-                   Eigen::Vector3f vw);
+  __host__ __device__ ConstraintGround(BodyRigid *body, Eigen::Matrix4f Eg,
+                                       float d, Eigen::Vector3f xl,
+                                       Eigen::Vector3f xw, Eigen::Vector3f nw,
+                                       Eigen::Vector3f vw);
 
-  vec7 computeDx(float dlambda, Eigen::Vector3f frictionalContactNormal);
-  float solvePosDir1(float c, Eigen::Vector3f nw);
-  void solveNorPos(float hs);
-  void applyJacobi();
+  __host__ __device__ vec7 computeDx(float dlambda,
+                                     Eigen::Vector3f frictionalContactNormal);
+  __host__ __device__ float solvePosDir1(float c, Eigen::Vector3f nw);
+  __host__ __device__ void solveNorPos(float hs);
+  __host__ __device__ void applyJacobi();
 };
 
 struct ConstraintRigid {
@@ -49,14 +51,17 @@ struct ConstraintRigid {
   Eigen::Vector3f x1;
   Eigen::Vector3f x2;
 
-  ConstraintRigid(BodyRigid *body1, BodyRigid *body2, float d,
-                  Eigen::Vector3f nw, Eigen::Vector3f x1, Eigen::Vector3f x2);
+  __host__ __device__ ConstraintRigid(BodyRigid *body1, BodyRigid *body2,
+                                      float d, Eigen::Vector3f nw,
+                                      Eigen::Vector3f x1, Eigen::Vector3f x2);
 
-  void solveNorPos(float hs);
-  float solvePosDir2(float c, Eigen::Vector3f nw);
-  std::tuple<Eigen::Vector4f, Eigen::Vector3f, Eigen::Vector4f, Eigen::Vector3f>
-  computeDx(float dlambda, Eigen::Vector3f nw);
-  void applyJacobi();
+  __host__ __device__ void solveNorPos(float hs);
+  __host__ __device__ float solvePosDir2(float c, Eigen::Vector3f nw);
+  __host__ __device__ void computeDx(float dlambda, Eigen::Vector3f nw,
+                                     Eigen::Vector4f *dq1, Eigen::Vector3f *dp1,
+                                     Eigen::Vector4f *dq2,
+                                     Eigen::Vector3f *dp2);
+  __host__ __device__ void applyJacobi();
 };
 
 struct ConstraintJointRevolve {
@@ -70,7 +75,7 @@ struct ConstraintJointRevolve {
   Eigen::Vector4f ql2;
   Eigen::Vector4f pl2;
 
-  void solve();
+  __host__ __device__ void solve();
 };
 
 union ConstraintInner {

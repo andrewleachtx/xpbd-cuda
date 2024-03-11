@@ -29,7 +29,8 @@ public:
   static void allocate_buffers(Model &model, int sim_count,
                                Body **&body_ptr_buffer,
                                Constraint *&constraint_buffer);
-  static __device__ __host__ std::pair<Eigen::Vector3f, Eigen::Vector3f>
-  generateTangents(Eigen::Vector3f nor);
+  static __device__ __host__ void generateTangents(Eigen::Vector3f nor,
+                                                   Eigen::Vector3f *out_tx,
+                                                   Eigen::Vector3f *out_ty);
 };
 } // namespace apbd

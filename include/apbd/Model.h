@@ -72,6 +72,7 @@ public:
   /**
    * writes current state out for debugging
    */
-  void write_state(unsigned int step);
+  __host__ __device__ void write_state(unsigned int step);
+  __host__ __device__ void print_config();
 };
 } // namespace apbd

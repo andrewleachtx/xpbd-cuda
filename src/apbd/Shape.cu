@@ -2,6 +2,7 @@
 #include "apbd/Shape.h"
 #include "collideBoxBox/odeBoxBox.h"
 #include "se3/lib.h"
+#include "util.h"
 
 namespace apbd {
 
@@ -26,7 +27,7 @@ bool Shape::broadphaseGround(Eigen::Matrix4f E, Eigen::Matrix4f Eg) {
     // Check the height of the center
     Eigen::Vector4f xl(0.0, 0.0, 0.0, 1.0);
     Eigen::Vector4f xw = E * xl;
-    Eigen::Vector4f xg = Eg.colPivHouseholderQr().solve(xw);
+    Eigen::Vector4f xg = Eg.inverse() * xw;
     float r = (data.sides / 2).norm(); // dist to a corner
     return xg(2) < 1.5 * r;
   }
@@ -55,7 +56,7 @@ Shape::narrowphaseGround(Eigen::Matrix4f E, Eigen::Matrix4f Eg) {
     xl.block<3, 1>(0, 7) = Eigen::Vector3f(-s(0), s(1), s(2));
 
     Eigen::Matrix<float, 4, 8> xw = E * xl;
-    Eigen::Matrix<float, 4, 8> xg = Eg.colPivHouseholderQr().solve(xw);
+    Eigen::Matrix<float, 4, 8> xg = Eg.inverse() * xw;
 
     int cdata_count = 0;
     for (size_t i = 0; i < 8; i++) {

@@ -3,8 +3,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "collideBoxBox/odeBoxBox.h"
+#include "util.h"
 #include <math.h>
-#include <string.h>
+// #include <string.h>
 
 /* debugging:
  *   IASSERT  is an internal assertion, i.e. a consistency check. if it fails
@@ -132,35 +133,44 @@ typedef fReal dQuaternion[4];
 #define dCopySign(a, b) (copysign((a), (b)))
 #define dNextAfter(x, y) nextafter(x, y)
 
-static __inline fReal _dCalcVectorDot3(const fReal *a, const fReal *b,
-                                       unsigned step_a, unsigned step_b) {
+__host__ __device__ static __inline fReal _dCalcVectorDot3(const fReal *a,
+                                                           const fReal *b,
+                                                           unsigned step_a,
+                                                           unsigned step_b) {
   return a[0] * b[0] + a[step_a] * b[step_b] + a[2 * step_a] * b[2 * step_b];
 }
 
-static __inline fReal dCalcVectorDot3(const fReal *a, const fReal *b) {
+__host__ __device__ static __inline fReal dCalcVectorDot3(const fReal *a,
+                                                          const fReal *b) {
   return _dCalcVectorDot3(a, b, 1, 1);
 }
-static __inline fReal dCalcVectorDot3_13(const fReal *a, const fReal *b) {
+__host__ __device__ static __inline fReal dCalcVectorDot3_13(const fReal *a,
+                                                             const fReal *b) {
   return _dCalcVectorDot3(a, b, 1, 3);
 }
-static __inline fReal dCalcVectorDot3_31(const fReal *a, const fReal *b) {
+__host__ __device__ static __inline fReal dCalcVectorDot3_31(const fReal *a,
+                                                             const fReal *b) {
   return _dCalcVectorDot3(a, b, 3, 1);
 }
-static __inline fReal dCalcVectorDot3_33(const fReal *a, const fReal *b) {
+__host__ __device__ static __inline fReal dCalcVectorDot3_33(const fReal *a,
+                                                             const fReal *b) {
   return _dCalcVectorDot3(a, b, 3, 3);
 }
-static __inline fReal dCalcVectorDot3_14(const fReal *a, const fReal *b) {
+__host__ __device__ static __inline fReal dCalcVectorDot3_14(const fReal *a,
+                                                             const fReal *b) {
   return _dCalcVectorDot3(a, b, 1, 4);
 }
-static __inline fReal dCalcVectorDot3_41(const fReal *a, const fReal *b) {
+__host__ __device__ static __inline fReal dCalcVectorDot3_41(const fReal *a,
+                                                             const fReal *b) {
   return _dCalcVectorDot3(a, b, 4, 1);
 }
-static __inline fReal dCalcVectorDot3_44(const fReal *a, const fReal *b) {
+__host__ __device__ static __inline fReal dCalcVectorDot3_44(const fReal *a,
+                                                             const fReal *b) {
   return _dCalcVectorDot3(a, b, 4, 4);
 }
 
-static __inline void dMultiplyHelper1_331(fReal *res, const fReal *a,
-                                          const fReal *b) {
+__host__ __device__ static __inline void
+dMultiplyHelper1_331(fReal *res, const fReal *a, const fReal *b) {
   fReal res_0, res_1, res_2;
   res_0 = dCalcVectorDot3_41(a, b);
   res_1 = dCalcVectorDot3_41(a + 1, b);
@@ -172,13 +182,13 @@ static __inline void dMultiplyHelper1_331(fReal *res, const fReal *a,
   res[2] = res_2;
 }
 
-static __inline void dMultiply1_331(fReal *res, const fReal *a,
-                                    const fReal *b) {
+__host__ __device__ static __inline void
+dMultiply1_331(fReal *res, const fReal *a, const fReal *b) {
   dMultiplyHelper1_331(res, a, b);
 }
 
-static __inline void dMultiplyHelper0_331(fReal *res, const fReal *a,
-                                          const fReal *b) {
+__host__ __device__ static __inline void
+dMultiplyHelper0_331(fReal *res, const fReal *a, const fReal *b) {
   fReal res_0, res_1, res_2;
   res_0 = dCalcVectorDot3(a, b);
   res_1 = dCalcVectorDot3(a + 4, b);
@@ -190,8 +200,8 @@ static __inline void dMultiplyHelper0_331(fReal *res, const fReal *a,
   res[2] = res_2;
 }
 
-static __inline void dMultiply0_331(fReal *res, const fReal *a,
-                                    const fReal *b) {
+__host__ __device__ static __inline void
+dMultiply0_331(fReal *res, const fReal *a, const fReal *b) {
   dMultiplyHelper0_331(res, a, b);
 }
 
@@ -214,9 +224,9 @@ typedef struct dContactGeom {
 // where pa,pb are two points, ua,ub are two unit length vectors, and alpha,
 // beta go from [-inf,inf], return alpha and beta such that qa and qb are
 // as close as possible
-void dLineClosestApproach(const fVector3 pa, const fVector3 ua,
-                          const fVector3 pb, const fVector3 ub, fReal *alpha,
-                          fReal *beta) {
+__host__ __device__ void
+dLineClosestApproach(const fVector3 pa, const fVector3 ua, const fVector3 pb,
+                     const fVector3 ub, fReal *alpha, fReal *beta) {
   fVector3 p;
   p[0] = pb[0] - pa[0];
   p[1] = pb[1] - pa[1];
@@ -244,7 +254,8 @@ void dLineClosestApproach(const fVector3 pa, const fVector3 ua,
 // the number of intersection points is returned by the function (this will
 // be in the range 0 to 8).
 
-static int intersectRectQuad(fReal h[2], fReal p[8], fReal ret[16]) {
+__host__ __device__ static int intersectRectQuad(fReal h[2], fReal p[8],
+                                                 fReal ret[16]) {
   // q (and r) contain nq (and nr) coordinate points for the current (and
   // chopped) polygons
   int nq = 4, nr;
@@ -294,7 +305,7 @@ static int intersectRectQuad(fReal h[2], fReal p[8], fReal ret[16]) {
   }
 done:
   if (q != ret)
-    memcpy(ret, q, nr * 2 * sizeof(fReal));
+    memcpy_device_bytes(ret, q, nr * 2 * sizeof(fReal));
   return nr;
 }
 
@@ -306,7 +317,8 @@ done:
 // n must be in the range [1..8]. m must be in the range [1..n]. i0 must be
 // in the range [0..n-1].
 
-void cullPoints(int n, fReal p[], int m, int i0, int iret[]) {
+__host__ __device__ void cullPoints(int n, fReal p[], int m, int i0,
+                                    int iret[]) {
   // compute the centroid of the polygon in cx,cy
   int i, j;
   fReal a, cx, cy, q;
@@ -383,10 +395,11 @@ void cullPoints(int n, fReal p[], int m, int i0, int iret[]) {
 // `contact' and `skip' are the contact array information provided to the
 // collision functions. this function only fills in the position and depth
 // fields.
-int dBoxBox(const fVector3 p1, const fMatrix3 R1, const fVector3 side1,
-            const fVector3 p2, const fMatrix3 R2, const fVector3 side2,
-            fVector3 normal, fReal *depth, int *return_code, int flags,
-            dContactGeom *contact) {
+__host__ __device__ int dBoxBox(const fVector3 p1, const fMatrix3 R1,
+                                const fVector3 side1, const fVector3 p2,
+                                const fMatrix3 R2, const fVector3 side2,
+                                fVector3 normal, fReal *depth, int *return_code,
+                                int flags, dContactGeom *contact) {
   const fReal fudge_factor = REAL(1.05);
   fVector3 p, pp, normalC = {0, 0, 0};
   const fReal *normalR = 0;
@@ -853,7 +866,7 @@ Contacts odeBoxBox(const Matrix4f &Ma, const Vector3f &scaleA,
 
   const int nContactGeoms = 8;
   dContactGeom contactGeoms[nContactGeoms];
-  memset(contactGeoms, 0, nContactGeoms * sizeof(dContactGeom));
+  // memset(contactGeoms, 0, nContactGeoms * sizeof(dContactGeom));
   float sidesA[3], sidesB[3];
   sidesA[0] = scaleA(0);
   sidesA[1] = scaleA(1);

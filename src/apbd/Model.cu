@@ -58,6 +58,7 @@ void Model::init() {
   // this->hs = this->h / this->substeps;
   // this->k = 0;
   // this->ks
+  this->print_config();
   this->write_state(0);
 }
 
@@ -79,7 +80,6 @@ __device__ Model Model::clone_with_buffers(const Model &other, size_t scene_id,
 void Model::simulate(Collider *collider) {
   float time = 0;
   float hs = this->h / static_cast<float>(this->substeps);
-  // std::cout << this->steps << ", " << this->substeps << std::endl;
   for (unsigned int step = 0; step < this->steps; step++) {
     this->clearBodyShockPropInfo();
     collider->run(this);
@@ -204,11 +204,25 @@ void Model::write_state(unsigned int step) {
 #ifdef WRITE
   printf("Step %d\n", step);
   for (size_t i = 0; i < body_count; i++) {
-    printf("%d ", i);
+    printf("%lu ", i);
     bodies[i].write_state();
     printf("\n");
   }
 #endif
+}
+
+void Model::print_config() {
+  printf("Body count: %lu\n"
+         "Constriaint count: %lu\n"
+         "Gravity: [%f %f %f]\n"
+         "Ground size: %f\n"
+         "Time Step: %f\n"
+         "End Time: %f\n"
+         "Steps: %u\n"
+         "Substeps: %u\n"
+         "Iterations: %u\n",
+         body_count, constraint_count, gravity(0), gravity(1), gravity(2),
+         ground_size, h, tEnd, steps, substeps, iters);
 }
 
 } // namespace apbd

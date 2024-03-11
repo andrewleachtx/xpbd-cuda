@@ -14,7 +14,7 @@
     }                                                                          \
   }
 
-// #define DEBUG_PRINTS
+#define DEBUG_PRINTS
 
 #ifdef DEBUG_PRINTS
 #define DEBUG_VEC(vec, n)                                                      \

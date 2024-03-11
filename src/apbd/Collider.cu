@@ -70,7 +70,7 @@ void Collider::broadphase(Model *model) {
 }
 
 void Collider::narrowphase(Model *model) {
-  auto Eg = model->ground_E;
+  auto &Eg = model->ground_E;
 
   for (size_t i = 0; i < this->bp_count_1; i++) {
     auto body = this->bpList1[i];
@@ -117,18 +117,17 @@ void Collider::narrowphase(Model *model) {
   }
 }
 
-std::pair<Eigen::Vector3f, Eigen::Vector3f>
-Collider::generateTangents(Eigen::Vector3f nor) {
+void Collider::generateTangents(Eigen::Vector3f nor, Eigen::Vector3f *tanx,
+                                Eigen::Vector3f *tany) {
   Eigen::Vector3f tmp;
   if (abs(nor(2)) < 1e-6) {
     tmp << 0, 0, 1;
   } else {
     tmp << 1, 0, 0;
   }
-  Eigen::Vector3f tany = nor.cross(tmp);
-  tany = tany / tany.norm();
-  Eigen::Vector3f tanx = tany.cross(nor);
-  return std::pair(tanx, tany);
+  *tany = nor.cross(tmp);
+  *tany = *tany / tany->norm();
+  *tanx = tany->cross(nor);
 }
 
 } // namespace apbd

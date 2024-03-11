@@ -1,6 +1,7 @@
 #ifndef _ODEBOXBOX_
 #define _ODEBOXBOX_
 
+#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
 #include <Eigen/Dense>
 
 struct Contacts {

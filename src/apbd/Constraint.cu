@@ -1,3 +1,4 @@
+#include "util.h"
 #include <apbd/Collider.h>
 #include <apbd/Constraint.h>
 #include <se3/lib.h>
@@ -207,7 +208,7 @@ void ConstraintRigid::solveNorPos(float hs) {
   float vNorm = v.norm();
   Vector3f vNormalized = v / vNorm;
   Vector3f tx, ty;
-  std::tie(tx, ty) = Collider::generateTangents(this->nw);
+  Collider::generateTangents(this->nw, &tx, &ty);
   // vNormalizedContactFrame = [-this->nw'; tx' ; ty'] * vNormalized;
   Eigen::Matrix3f tmp;
   tmp << -this->nw, tx, ty;
@@ -251,8 +252,7 @@ void ConstraintRigid::solveNorPos(float hs) {
     Vector3f frictionalContactNormal = tmp * frictionalContactLambda / dlambda;
     Vector4f dq1, dq2;
     Vector3f dp1, dp2;
-    std::tie(dq1, dp1, dq2, dp2) =
-        this->computeDx(dlambda, frictionalContactNormal);
+    this->computeDx(dlambda, frictionalContactNormal, &dq1, &dp1, &dq2, &dp2);
     if (this->shockProp) {
       this->body1->dxJacobiShock.block<4, 1>(0, 0) += dq1;
       this->body1->dxJacobiShock.block<3, 1>(4, 0) += dp1;
@@ -285,16 +285,17 @@ float ConstraintRigid::solvePosDir2(float c, Eigen::Vector3f nw) {
   return numerator / denominator;
 }
 
-std::tuple<Vector4f, Vector3f, Vector4f, Vector3f>
-ConstraintRigid::computeDx(float dlambda, Eigen::Vector3f nw) {
+void ConstraintRigid::computeDx(float dlambda, Eigen::Vector3f nw,
+                                Vector4f *dq1, Vector3f *dp1, Vector4f *dq2,
+                                Vector3f *dp2) {
   auto m1 = this->body1->Mp;
   auto m2 = this->body2->Mp;
   auto I1 = this->body1->Mr;
   auto I2 = this->body2->Mr;
   // Position update
   Vector3f dpw = dlambda * nw;
-  Vector3f dp1 = dpw / m1;
-  Vector3f dp2 = -dpw / m2;
+  *dp1 = dpw / m1;
+  *dp2 = -dpw / m2;
   // Quaternion update
   Quaternionf q1 = Quaternionf(this->body1->x1_0.block<4, 1>(0, 0));
   Quaternionf q2 = Quaternionf(this->body2->x1_0.block<4, 1>(0, 0));
@@ -320,11 +321,10 @@ ConstraintRigid::computeDx(float dlambda, Eigen::Vector3f nw) {
   // Vector4f dq1 = (Quaternionf(Vector4f((0.5 * qtmp1.coeffs()).array().sin()))
   // * q1).coeffs(); Vector4f dq2 = (Quaternionf(Vector4f((-0.5 *
   // qtmp2.coeffs()).array().sin())) * q2).coeffs();
-  Vector4f dq1 = 0.5 * se3::qMul(qtmp1.coeffs(), q1.coeffs());
-  Vector4f dq2 = -0.5 * se3::qMul(qtmp2.coeffs(), q2.coeffs());
+  *dq1 = 0.5 * se3::qMul(qtmp1.coeffs(), q1.coeffs());
+  *dq2 = -0.5 * se3::qMul(qtmp2.coeffs(), q2.coeffs());
   // Vector4f dq1 = 0.5 * (qtmp1 * q1).coeffs();
   // Vector4f dq2 = -0.5 * (qtmp2 * q2).coeffs();
-  return std::make_tuple(dq1, dp1, dq2, dp2);
 }
 
 void ConstraintJointRevolve::solve() {
