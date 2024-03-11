@@ -24,11 +24,11 @@ bool Shape::broadphaseGround(Eigen::Matrix4f E, Eigen::Matrix4f Eg) {
     auto data = this->data.cuboid;
 
     // Check the height of the center
-    Eigen::Vector4f xl = {0, 0, 0, 1};
+    Eigen::Vector4f xl(0.0, 0.0, 0.0, 1.0);
     Eigen::Vector4f xw = E * xl;
     Eigen::Vector4f xg = Eg.colPivHouseholderQr().solve(xw);
     float r = (data.sides / 2).norm(); // dist to a corner
-    return xg(3) < 1.5 * r;
+    return xg(2) < 1.5 * r;
   }
   default:
     return false;
@@ -45,14 +45,14 @@ Shape::narrowphaseGround(Eigen::Matrix4f E, Eigen::Matrix4f Eg) {
     Eigen::Vector3f s = data.sides / 2;
     // local space
     Eigen::Matrix<float, 4, 8> xl = Eigen::Matrix<float, 4, 8>::Ones();
-    xl.block<3, 1>(0, 0) = Eigen::Vector3f(-s(1), -s(2), -s(3));
-    xl.block<3, 1>(0, 1) = Eigen::Vector3f(s(1), -s(2), -s(3));
-    xl.block<3, 1>(0, 2) = Eigen::Vector3f(s(1), s(2), -s(3));
-    xl.block<3, 1>(0, 3) = Eigen::Vector3f(-s(1), s(2), -s(3));
-    xl.block<3, 1>(0, 4) = Eigen::Vector3f(-s(1), -s(2), s(3));
-    xl.block<3, 1>(0, 5) = Eigen::Vector3f(s(1), -s(2), s(3));
-    xl.block<3, 1>(0, 6) = Eigen::Vector3f(s(1), s(2), s(3));
-    xl.block<3, 1>(0, 7) = Eigen::Vector3f(-s(1), s(2), s(3));
+    xl.block<3, 1>(0, 0) = Eigen::Vector3f(-s(0), -s(1), -s(2));
+    xl.block<3, 1>(0, 1) = Eigen::Vector3f(s(0), -s(1), -s(2));
+    xl.block<3, 1>(0, 2) = Eigen::Vector3f(s(0), s(1), -s(2));
+    xl.block<3, 1>(0, 3) = Eigen::Vector3f(-s(0), s(1), -s(2));
+    xl.block<3, 1>(0, 4) = Eigen::Vector3f(-s(0), -s(1), s(2));
+    xl.block<3, 1>(0, 5) = Eigen::Vector3f(s(0), -s(1), s(2));
+    xl.block<3, 1>(0, 6) = Eigen::Vector3f(s(0), s(1), s(2));
+    xl.block<3, 1>(0, 7) = Eigen::Vector3f(-s(0), s(1), s(2));
 
     Eigen::Matrix<float, 4, 8> xw = E * xl;
     Eigen::Matrix<float, 4, 8> xg = Eg.colPivHouseholderQr().solve(xw);
@@ -62,17 +62,17 @@ Shape::narrowphaseGround(Eigen::Matrix4f E, Eigen::Matrix4f Eg) {
       // This only supports vertex collisions
       float d = xg(2, i);
       if (d < 0) {
-        Eigen::Vector4f xgproj = xg.block<1, 4>(0, i);
+        Eigen::Vector4f xgproj = xg.block<4, 1>(0, i);
         // project onto the floor plane
         xgproj(2) = 0;
         cdata[cdata_count++] = CollisionGround{
             .d = d,
-            .xl = xl.block<1, 3>(0, i),
+            .xl = xl.block<3, 1>(0, i),
             // transform to world space
             .xw = Eg.block<3, 4>(0, 0) * xgproj,
             // normal
             .nw = Eg.block<3, 1>(0, 2),
-            // unused for now, assuming the ground
+            // unused for now, assuming the ground doesn't move
             .vw = Eigen::Vector3f::Zero(),
         };
       }
@@ -172,9 +172,9 @@ float ShapeCuboid::raycast(Eigen::Vector3f x, Eigen::Vector3f n) {
   x = (1 - thresh) * x; // make the point go slightly inside the box
   n = -n;               // negate ray since it starts inside the box
   jgt_float::ray r;
-  jgt_float::make_ray(x(1), x(2), x(3), n(1), n(2), n(3), &r);
+  jgt_float::make_ray(x(0), x(1), x(2), n(0), n(1), n(2), &r);
   jgt_float::aabox a;
-  jgt_float::make_aabox(bmin(1), bmin(2), bmin(3), bmax(1), bmax(2), bmax(3),
+  jgt_float::make_aabox(bmin(0), bmin(1), bmin(2), bmax(0), bmax(1), bmax(2),
                         &a);
   float t;
   bool _hit = jgt_float::smits_mul(&r, &a, &t);

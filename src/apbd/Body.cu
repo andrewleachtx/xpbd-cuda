@@ -112,7 +112,7 @@ void Body::stepBDF1(unsigned int step, unsigned int substep, float hs,
     Eigen::Vector3f Iw =
         I.array() * w.array(); // angular momentum in body space
     f = f + m * gravity;       // Gravity
-    t = t + Iw.cross(w);       // Coriolis
+    t = t + se3::cross(Iw, w); // Coriolis
     // Integrate velocities
     w = w + hs * Eigen::Vector3f(t.array() / I.array());
     v = v + hs * (f / m);
@@ -157,13 +157,13 @@ void Body::applyJacobiShock() {
   case BODY_AFFINE: {
     auto &data = this->data.affine;
     data.x1 += data.dxJacobiShock;
-    data.dxJacobiShock = vec12(0);
+    data.dxJacobiShock = vec12::Zero();
     break;
   }
   case BODY_RIGID: {
     auto &data = this->data.rigid;
     data.x1 += data.dxJacobiShock;
-    data.dxJacobiShock = vec7(0);
+    data.dxJacobiShock = vec7::Zero();
     break;
   }
   default:
@@ -388,13 +388,13 @@ Eigen::Matrix4f BodyRigid::computeTransform() {
   Eigen::Matrix4f E = Eigen::Matrix4f::Identity();
   E.block<3, 3>(0, 0) =
       Eigen::Quaternionf(x.block<4, 1>(0, 0)).toRotationMatrix();
-  E.block<3, 1>(3, 0) = x.block<3, 1>(4, 0);
+  E.block<3, 1>(0, 3) = x.block<3, 1>(4, 0);
   return E;
 }
 
 void BodyRigid::applyJacobi() {
   this->x1 += this->dxJacobi;
-  this->dxJacobi = vec7(0);
+  this->dxJacobi = vec7::Zero();
   this->regularize();
 }
 
@@ -423,8 +423,8 @@ void Body::write_state() {
   }
   case BODY_RIGID: {
     auto &data = this->data.rigid;
-    position = data.x.block<3, 1>(0, 0);
-    rotation = data.x.block<4, 1>(3, 0);
+    position = data.x.block<3, 1>(4, 0);
+    rotation = data.x.block<4, 1>(0, 0);
     break;
   }
   default:

@@ -58,6 +58,7 @@ void Model::init() {
   // this->hs = this->h / this->substeps;
   // this->k = 0;
   // this->ks
+  this->write_state(0);
 }
 
 void Model::move_to_device() {
@@ -85,13 +86,13 @@ void Model::simulate(Collider *collider) {
     this->constructConstraintGraph();
     for (unsigned int substep = 0; substep < this->substeps; substep++) {
       this->stepBDF1(step, substep, hs);
-      this->solveConSP(hs);
-      this->solveConGS(hs);
+      this->solveConSP(collider, hs);
+      this->solveConGS(collider, hs);
       time += hs;
     }
     this->computeEnergies();
     // draw ?
-    this->write_state(step);
+    this->write_state(step + 1);
   }
 }
 
@@ -140,10 +141,27 @@ void Model::constructConstraintGraph() {
   // does not seem to be used for anything other than setting shockProp to true;
   // so we can do this here
 }
-void Model::solveConSP(float hs) {
+void Model::solveConSP(Collider *collider, float hs) {
   for (size_t constraint_i = 0; constraint_i < this->constraint_count;
        constraint_i++) {
     this->constraints[constraint_i].clear();
+  }
+
+  // TODO: remove and add graph creation
+  for (size_t i = 0; i < collider->collision_count; i++) {
+    collider->collisions[i].solve(hs, true);
+  }
+  for (size_t i = 0; i < this->constraint_count; i++) {
+    this->constraints[i].solve(hs, true);
+  }
+  for (size_t i = 0; i < this->body_count; i++) {
+    this->bodies[i].applyJacobiShock();
+  }
+  for (size_t i = 0; i < collider->collision_count; i++) {
+    collider->collisions[i].solve(hs, true);
+  }
+  for (size_t i = 0; i < this->constraint_count; i++) {
+    this->constraints[i].solve(hs, true);
   }
 
   for (size_t i = 0; i < this->layer_count; i++) {
@@ -163,16 +181,19 @@ void Model::solveConSP(float hs) {
     for (int iter = 0; iter < this->iters; iter++) {
       for (size_t j = 0; j < this->constraint_layer_sizes[i]; j++) {
         this->constraints[this->constraint_layers[i * MAX_LAYER_SIZE + j]]
-            .solve(hs, false);
+            .solve(hs, true);
       }
     }
   }
 }
-void Model::solveConGS(float hs) {
+void Model::solveConGS(Collider *collider, float hs) {
   for (int iter = 0; iter < this->iters; iter++) {
     for (size_t constraint_i = 0; constraint_i < this->constraint_count;
          constraint_i++) {
       this->constraints[constraint_i].solve(hs, false);
+    }
+    for (size_t i = 0; i < collider->collision_count; i++) {
+      collider->collisions[i].solve(hs, false);
     }
   }
 }

@@ -13,13 +13,14 @@ class Collider {
   size_t bp_count_2;
   Body **bpList1;
   Body **bpList2;
+
+public:
   size_t collision_count;
   Constraint *collisions;
 
   __device__ __host__ void broadphase(Model *model);
   __device__ __host__ void narrowphase(Model *model);
 
-public:
   Collider(Model *model);
   __device__ __host__ Collider(Model *model, size_t scene_id,
                                Body **body_ptr_buffer,

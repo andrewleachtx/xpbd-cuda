@@ -14,6 +14,43 @@
     }                                                                          \
   }
 
+// #define DEBUG_PRINTS
+
+#ifdef DEBUG_PRINTS
+#define DEBUG_VEC(vec, n)                                                      \
+  {                                                                            \
+    printf(#vec " = ");                                                        \
+    for (int i = 0; i < n; i++) {                                              \
+      printf("%f ", vec(i));                                                   \
+    }                                                                          \
+    printf("\n");                                                              \
+  }
+#define DEBUG_MAT(vec, m, n)                                                   \
+  {                                                                            \
+    printf(#vec " = ");                                                        \
+    for (int i = 0; i < n; i++) {                                              \
+      for (int j = 0; j < m; j++) {                                            \
+        printf("%f ", vec(i, j));                                              \
+      }                                                                        \
+      printf("\n");                                                            \
+    }                                                                          \
+    printf("\n");                                                              \
+  }
+#define TRACE(val)                                                             \
+  { printf(__FILE__ ":%d - %s: " #val "\n", __LINE__, __PRETTY_FUNCTION__); }
+#define DEBUG_FLOAT(float)                                                     \
+  { printf(#float " = %f\n", float); }
+#else
+#define DEBUG_VEC(vec, n)                                                      \
+  {}
+#define DEBUG_MAT(vec, m, n)                                                   \
+  {}
+#define TRACE(val)                                                             \
+  {}
+#define DEBUG_FLOAT(float)                                                     \
+  {}
+#endif
+
 void *alloc_device_bytes(size_t bytes);
 template <typename T> T *alloc_device(size_t count) {
   size_t bytes = count * sizeof(T);

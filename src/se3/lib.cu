@@ -35,9 +35,9 @@ Eigen::Matrix3f aaToMat(Eigen::Vector3f axis, float angle) {
   // Create a rotation matrix from an (axis,angle) pair
   // From vecmath
   Eigen::Matrix3f R = Eigen::Matrix3f::Identity();
-  auto ax = axis(1);
-  auto ay = axis(2);
-  auto az = axis(3);
+  auto ax = axis(0);
+  auto ay = axis(1);
+  auto az = axis(2);
   auto mag = sqrt(ax * ax + ay * ay + az * az);
   if (mag > se3::THRESH) {
     mag = 1.0 / mag;
@@ -51,10 +51,10 @@ Eigen::Matrix3f aaToMat(Eigen::Vector3f axis, float angle) {
       }
       auto sinTheta = sin(angle);
       auto cosTheta = cos(angle);
+      R(0, 0) = cosTheta;
+      R(0, 1) = -sinTheta;
+      R(1, 0) = sinTheta;
       R(1, 1) = cosTheta;
-      R(1, 2) = -sinTheta;
-      R(2, 1) = sinTheta;
-      R(2, 2) = cosTheta;
     } else if (abs(ay) < se3::THRESH && abs(az) < se3::THRESH) {
       // Rotation about X
       if (ax < 0) {
@@ -62,10 +62,10 @@ Eigen::Matrix3f aaToMat(Eigen::Vector3f axis, float angle) {
       }
       auto sinTheta = sin(angle);
       auto cosTheta = cos(angle);
+      R(1, 1) = cosTheta;
+      R(1, 2) = -sinTheta;
+      R(2, 1) = sinTheta;
       R(2, 2) = cosTheta;
-      R(2, 3) = -sinTheta;
-      R(3, 2) = sinTheta;
-      R(3, 3) = cosTheta;
     } else if (abs(az) < se3::THRESH && abs(ax) < se3::THRESH) {
       // Rotation about Y
       if (ay < 0) {
@@ -73,10 +73,10 @@ Eigen::Matrix3f aaToMat(Eigen::Vector3f axis, float angle) {
       }
       auto sinTheta = sin(angle);
       auto cosTheta = cos(angle);
-      R(1, 1) = cosTheta;
-      R(1, 3) = sinTheta;
-      R(3, 1) = -sinTheta;
-      R(3, 3) = cosTheta;
+      R(0, 0) = cosTheta;
+      R(0, 2) = sinTheta;
+      R(2, 0) = -sinTheta;
+      R(2, 2) = cosTheta;
     } else {
       // General rotation
       auto sinTheta = sin(angle);
@@ -85,15 +85,15 @@ Eigen::Matrix3f aaToMat(Eigen::Vector3f axis, float angle) {
       auto xz = ax * az;
       auto xy = ax * ay;
       auto yz = ay * az;
-      R(1, 1) = t * ax * ax + cosTheta;
-      R(1, 2) = t * xy - sinTheta * az;
-      R(1, 3) = t * xz + sinTheta * ay;
-      R(2, 1) = t * xy + sinTheta * az;
-      R(2, 2) = t * ay * ay + cosTheta;
-      R(2, 3) = t * yz - sinTheta * ax;
-      R(3, 1) = t * xz - sinTheta * ay;
-      R(3, 2) = t * yz + sinTheta * ax;
-      R(3, 3) = t * az * az + cosTheta;
+      R(0, 0) = t * ax * ax + cosTheta;
+      R(0, 1) = t * xy - sinTheta * az;
+      R(0, 2) = t * xz + sinTheta * ay;
+      R(1, 0) = t * xy + sinTheta * az;
+      R(1, 1) = t * ay * ay + cosTheta;
+      R(1, 2) = t * yz - sinTheta * ax;
+      R(2, 0) = t * xz - sinTheta * ay;
+      R(2, 1) = t * yz + sinTheta * ax;
+      R(2, 2) = t * az * az + cosTheta;
     }
   }
   return R;
@@ -141,26 +141,27 @@ Eigen::Matrix3f aaToMat(Eigen::Vector3f axis, float angle) {
 Eigen::Matrix4f brac(Eigen::Matrix<float, 6, 1> x) {
   Eigen::Matrix4f S = Eigen::Matrix4f::Zero();
   Eigen::Matrix3f tmp;
-  tmp << 0, -x(3), x(2), x(3), 0, -x(1), -x(2), x(1), 0;
+  tmp << 0, -x(2), x(1), x(2), 0, -x(0), -x(1), x(0), 0;
   S.block<3, 3>(0, 0) = tmp;
-  S.block<1, 3>(3, 4) = Eigen::Vector3f(x(4), x(5), x(6));
+  S.block<3, 1>(0, 3) = Eigen::Vector3f(x(3), x(4), x(5));
   return S;
 }
 
-// Eigen::Vector3f qRot(Eigen::Vector4f q, Eigen::Vector3f v) {
-//   Eigen::Vector3f u = q.head<3>();
-//   float s = q[3];
-//   return (2 * u.dot(v) * u + (s*s - u.dot(u)) * v + 2 * s * u.cross(v));
-// }
-// Eigen::Vector3f qRotInv(Eigen::Vector4f q, Eigen::Vector3f v) {
-//   Eigen::Vector3f u = -q.head<3>();
-//   float s = q[3];
-//   return (2 * u.dot(v) * u + (s*s - u.dot(u)) * v + 2 * s * u.cross(v));
-// }
+Eigen::Vector3f qRot(Eigen::Vector4f q, Eigen::Vector3f v) {
+  Eigen::Vector3f u = q.block<3, 1>(0, 0);
+  float s = q(3);
+  return (2 * u.dot(v) * u + (s * s - u.dot(u)) * v + 2 * s * u.cross(v));
+}
+Eigen::Vector3f qRotInv(Eigen::Vector4f q, Eigen::Vector3f v) {
+  Eigen::Vector3f u = -q.block<3, 1>(0, 0);
+  float s = q(3);
+  return (2 * u.dot(v) * u + (s * s - u.dot(u)) * v + 2 * s * u.cross(v));
+}
 
 Eigen::Quaternionf invert_q(const Eigen::Quaternionf &q) {
-  Eigen::Vector3f tmp = -q.vec();
-  return Eigen::Quaternionf(q.w(), tmp(0), tmp(1), tmp(2));
+  // Eigen::Vector3f tmp = -q.vec();
+  // return Eigen::Quaternionf(q.w(), tmp(0), tmp(1), tmp(2));
+  return Eigen::Quaternionf(q.w(), -q.x(), -q.y(), -q.z());
 }
 
 Eigen::Matrix<float, 6, 1> inertiaCuboid(Eigen::Vector3f whd, float density) {
@@ -177,6 +178,33 @@ Eigen::Matrix<float, 6, 1> inertiaCuboid(Eigen::Vector3f whd, float density) {
   m(4) = mass;
   m(5) = mass;
   return m;
+}
+Eigen::Vector4f qMul(Eigen::Vector4f q1, Eigen::Vector4f q2) {
+  // q = q1 * q2
+  Eigen::Vector3f v1 = q1.block<3, 1>(0, 0);
+  Eigen::Vector3f v2 = q2.block<3, 1>(0, 0);
+  float r1 = q1(3);
+  float r2 = q2(3);
+  Eigen::Vector4f q;
+  q.block<3, 1>(0, 0) = r1 * v2 + r2 * v1 + v1.cross(v2);
+  q(3) = r1 * r2 - v1.dot(v2);
+  return q;
+}
+
+Eigen::Vector3f cross(Eigen::Vector3f v1, Eigen::Vector3f v2) {
+  Eigen::Vector3f v = Eigen::Vector3f::Zero();
+  float v1x = v1(0);
+  float v1y = v1(1);
+  float v1z = v1(2);
+  float v2x = v2(0);
+  float v2y = v2(1);
+  float v2z = v2(2);
+  float x = v1y * v2y - v1z * v2y;
+  float y = v2x * v1z - v2z * v1x;
+  v(2) = v1x * v2y - v1y * v2x;
+  v(0) = x;
+  v(1) = y;
+  return v;
 }
 
 } // namespace se3

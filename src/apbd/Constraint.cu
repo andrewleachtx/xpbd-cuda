@@ -112,43 +112,43 @@ void ConstraintGround::solveNorPos(float hs) {
   Vector3f ty = Eg.block<3, 1>(0, 1);
   Eigen::Matrix3f frame_tmp;
   frame_tmp << nw, tx, ty;
-  Vector3f vNormalizedContactFrame = frame_tmp * vNormalized;
+  Vector3f vNormalizedContactFrame = frame_tmp.transpose() * vNormalized;
 
   float dlambda = solvePosDir1(vNorm, vNormalized);
   C = vNorm * vNormalizedContactFrame;
 
   float dlambdaNor = dlambda * vNormalizedContactFrame(0);
-  float lambdaNor = lambda(1) + dlambdaNor;
+  float lambdaNor = lambda(0) + dlambdaNor;
   if (lambdaNor < 0) {
-    dlambdaNor = -lambda(1);
+    dlambdaNor = -lambda(0);
   }
-  lambda(1) += dlambdaNor;
+  lambda(0) += dlambdaNor;
   float mu = body->mu;
-  Vector3f dlambdaTan;
+  Vector2f dlambdaTan = Vector2f::Zero();
   if (mu > 0) {
     float dlambdaTx = dlambda * vNormalizedContactFrame(1);
     float dlambdaTy = dlambda * vNormalizedContactFrame(2);
-    float lambdaNorLenMu = mu * lambda(1);
-    Vector2f lambdaTan = Vector2f(lambda(2) + dlambdaTx, lambda(3) + dlambdaTy);
+    float lambdaNorLenMu = mu * lambda(0);
+    Vector2f lambdaTan = Vector2f(lambda(1) + dlambdaTx, lambda(2) + dlambdaTy);
     float lambdaTanLen = lambdaTan.norm();
-    auto dlambdaTan = Vector2f(dlambdaTx, dlambdaTy);
+    dlambdaTan = Vector2f(dlambdaTx, dlambdaTy);
     if (lambdaTanLen > lambdaNorLenMu) {
       dlambdaTan = (lambdaTan / lambdaTanLen * lambdaNorLenMu -
-                    Vector2f(lambda(2), lambda(3)));
+                    Vector2f(lambda(1), lambda(2)));
     }
-    lambda(2) += dlambdaTan(0);
-    lambda(3) += dlambdaTan(1);
+    lambda(1) += dlambdaTan(0);
+    lambda(2) += dlambdaTan(1);
   }
 
-  Vector3f frictionalContactLambda = Vector3f(dlambdaNor, 0, 0) + dlambdaTan;
+  Vector3f frictionalContactLambda =
+      Vector3f(dlambdaNor, dlambdaTan(0), dlambdaTan(1));
   dlambda = frictionalContactLambda.norm();
   if (dlambda > 0) {
     // frictionalContactNormal = [this->nw, tx, ty] * frictionalContactLambda ./
     // dlambda;
     Eigen::Matrix3f tmp;
     tmp << nw, tx, ty;
-    Vector3f frictionalContactNormal =
-        (tmp * frictionalContactLambda).array() / dlambda;
+    Vector3f frictionalContactNormal = tmp * frictionalContactLambda / dlambda;
     vec7 dq = computeDx(dlambda, frictionalContactNormal);
     body->dxJacobi.block<4, 1>(0, 0) += dq.block<4, 1>(0, 0);
     body->dxJacobi.block<3, 1>(4, 0) += dq.block<3, 1>(4, 0);
@@ -169,8 +169,7 @@ float ConstraintGround::solvePosDir1(float c, Eigen::Vector3f nw) {
   return numerator / denominator;
 }
 
-vec7 ConstraintGround::computeDx(float dlambda,
-                                 Eigen::Vector3f frictionalContactNormal) {
+vec7 ConstraintGround::computeDx(float dlambda, Eigen::Vector3f nw) {
 
   float m1 = body->Mp;
   Vector3f I1 = body->Mr;
@@ -178,14 +177,17 @@ vec7 ConstraintGround::computeDx(float dlambda,
   Vector3f dpw = dlambda * nw;
   Vector3f dp = dpw / m1;
   // Quaternion update
-  Quaternionf q1 = Quaternionf(Eigen::Vector4f(body->x1_0.block<1, 4>(0, 0)));
-  auto dpl1 = (se3::invert_q(q1) * dpw);
+  Quaternionf q1 = Quaternionf(Eigen::Vector4f(body->x1_0.block<4, 1>(0, 0)));
+  auto dpl1 = se3::qRotInv(q1.coeffs(), dpw);
+  // auto dpl1 = (se3::invert_q(q1) * dpw);
   Vector4f q2vec;
-  q2vec << (q1 * (xl.cross(dpl1).array() / I1.array())), 0;
+  q2vec << se3::qRot(q1.coeffs(), (xl.cross(dpl1).array() / I1.array())), 0;
+  // q2vec << (q1 * (xl.cross(dpl1).array() / I1.array())), 0;
   // qtmp1 = [I1.\se3.cross(rl1,dpl1); 0];
   // dq = se3.qMul(sin(0.5*qtmp1),q1);
   Quaternionf q2(q2vec);
-  Vector4f dq = 0.5 * (q2 * q1).coeffs();
+  Vector4f dq = 0.5 * se3::qMul(q2.coeffs(), q1.coeffs());
+  // Vector4f dq = 0.5 * (q2 * q1).coeffs();
   vec7 out;
   out << dq, dp;
   return out;
@@ -209,35 +211,35 @@ void ConstraintRigid::solveNorPos(float hs) {
   // vNormalizedContactFrame = [-this->nw'; tx' ; ty'] * vNormalized;
   Eigen::Matrix3f tmp;
   tmp << -this->nw, tx, ty;
-  Vector3f vNormalizedContactFrame = tmp * vNormalized;
+  Vector3f vNormalizedContactFrame = tmp.transpose() * vNormalized;
 
-  float dlambda = this->solvePosDir2(v.norm(), vNormalized);
+  float dlambda = this->solvePosDir2(vNorm, vNormalized);
   this->C = vNorm * vNormalizedContactFrame;
 
-  float dlambdaNor = dlambda * vNormalizedContactFrame(1);
-  float lambdaNor = this->lambda(1) + dlambdaNor;
+  float dlambdaNor = dlambda * vNormalizedContactFrame(0);
+  float lambdaNor = this->lambda(0) + dlambdaNor;
   if (lambdaNor < 0) {
-    dlambdaNor = -this->lambda(1);
+    dlambdaNor = -this->lambda(0);
   }
-  this->lambda(1) = this->lambda(1) + dlambdaNor;
+  this->lambda(0) = this->lambda(0) + dlambdaNor;
   float mu1 = this->body1->mu;
   float mu2 = this->body2->mu;
   float mu = 0.5 * (mu1 + mu2);
   Vector2f dlambdaTan{0, 0};
   if (mu > 0) {
-    float dlambdaTx = dlambda * vNormalizedContactFrame(2);
-    float dlambdaTy = dlambda * vNormalizedContactFrame(3);
-    float lambdaNorLenMu = mu * this->lambda(1);
-    Vector2f lambdaTan{this->lambda(2) + dlambdaTx,
-                       this->lambda(3) + dlambdaTy};
+    float dlambdaTx = dlambda * vNormalizedContactFrame(1);
+    float dlambdaTy = dlambda * vNormalizedContactFrame(2);
+    float lambdaNorLenMu = mu * this->lambda(0);
+    Vector2f lambdaTan{this->lambda(1) + dlambdaTx,
+                       this->lambda(2) + dlambdaTy};
     float lambdaTanLen = lambdaTan.norm();
     dlambdaTan = Vector2f(dlambdaTx, dlambdaTy);
     if (lambdaTanLen > lambdaNorLenMu) {
       dlambdaTan = lambdaTan / lambdaTanLen * lambdaNorLenMu -
-                   Vector2f(this->lambda(2), this->lambda(3));
+                   Vector2f(this->lambda(1), this->lambda(2));
     }
+    this->lambda(1) = this->lambda(1) + dlambdaTan(0);
     this->lambda(2) = this->lambda(2) + dlambdaTan(1);
-    this->lambda(3) = this->lambda(3) + dlambdaTan(2);
   }
 
   Vector3f frictionalContactLambda;
@@ -246,8 +248,7 @@ void ConstraintRigid::solveNorPos(float hs) {
   if (dlambda > 0) {
     Eigen::Matrix3f tmp;
     tmp << -this->nw, tx, ty;
-    Vector3f frictionalContactNormal =
-        tmp * Vector3f(dlambda / frictionalContactLambda.array());
+    Vector3f frictionalContactNormal = tmp * frictionalContactLambda / dlambda;
     Vector4f dq1, dq2;
     Vector3f dp1, dp2;
     std::tie(dq1, dp1, dq2, dp2) =
@@ -297,18 +298,32 @@ ConstraintRigid::computeDx(float dlambda, Eigen::Vector3f nw) {
   // Quaternion update
   Quaternionf q1 = Quaternionf(this->body1->x1_0.block<4, 1>(0, 0));
   Quaternionf q2 = Quaternionf(this->body2->x1_0.block<4, 1>(0, 0));
-  Vector3f dpl1 = se3::invert_q(q1) * dpw;
-  Vector3f dpl2 = se3::invert_q(q2) * dpw;
+  Vector3f dpl1 = se3::qRotInv(q1.coeffs(), dpw);
+  Vector3f dpl2 = se3::qRotInv(q2.coeffs(), dpw);
+  // Vector3f dpl1 = se3::invert_q(q1) * dpw;
+  // Vector3f dpl2 = se3::invert_q(q2) * dpw;
+
   // qtmp1 = [se3.qRot(q1,I1.\se3.cross(this.x1,dpl1)); 0];
-  Vector3f tmp = q1 * (this->x1.cross(dpl1).array() / I1.array());
+  Vector3f tmp =
+      se3::qRot(q1.coeffs(), (this->x1.cross(dpl1).array() / I1.array()));
+  // Vector3f tmp = q1 * (this->x1.cross(dpl1).array() / I1.array());
   Quaternionf qtmp1(0, tmp.x(), tmp.y(), tmp.z());
+
   // qtmp2 = [se3.qRot(q2,I2.\se3.cross(this.x2,dpl2)); 0];
-  Vector3f tmp1 = q2 * (this->x2.cross(dpl2).array() / I2.array());
+  Vector3f tmp1 =
+      se3::qRot(q2.coeffs(), (this->x2.cross(dpl2).array() / I2.array()));
+  // Vector3f tmp1 = q2 * (this->x2.cross(dpl2).array() / I2.array());
   Quaternionf qtmp2(0, tmp1.x(), tmp1.y(), tmp1.z());
+
   // dq1 = se3.qMul(sin(0.5*qtmp1),q1);
   // dq2 = se3.qMul(sin(-0.5*qtmp2),q2);
-  Vector4f dq1 = 0.5 * (qtmp1 * q1).coeffs();
-  Vector4f dq2 = -0.5 * (qtmp2 * q2).coeffs();
+  // Vector4f dq1 = (Quaternionf(Vector4f((0.5 * qtmp1.coeffs()).array().sin()))
+  // * q1).coeffs(); Vector4f dq2 = (Quaternionf(Vector4f((-0.5 *
+  // qtmp2.coeffs()).array().sin())) * q2).coeffs();
+  Vector4f dq1 = 0.5 * se3::qMul(qtmp1.coeffs(), q1.coeffs());
+  Vector4f dq2 = -0.5 * se3::qMul(qtmp2.coeffs(), q2.coeffs());
+  // Vector4f dq1 = 0.5 * (qtmp1 * q1).coeffs();
+  // Vector4f dq2 = -0.5 * (qtmp2 * q2).coeffs();
   return std::make_tuple(dq1, dp1, dq2, dp2);
 }
 

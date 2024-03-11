@@ -45,8 +45,8 @@ public:
                                     float hs);
   __host__ __device__ void clearBodyShockPropInfo();
   __host__ __device__ void constructConstraintGraph();
-  __host__ __device__ void solveConSP(float hs);
-  __host__ __device__ void solveConGS(float hs);
+  __host__ __device__ void solveConSP(Collider *collider, float hs);
+  __host__ __device__ void solveConGS(Collider *collider, float hs);
   __host__ __device__ void computeEnergies();
 
   /**

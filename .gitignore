@@ -3,3 +3,4 @@ build
 .cache
 .gdbinit
 *autogen*
+*.blend1
