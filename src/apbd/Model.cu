@@ -11,8 +11,7 @@ Model::Model()
       constraints(nullptr), constraint_count(0), constraint_layers(nullptr),
       layer_count(0), constraint_layer_sizes(nullptr), body_layers(nullptr),
       body_layer_sizes(nullptr), gravity(0.0, 0.0, -980.0), iters(1),
-      ground_E(Eigen::Matrix4f::Zero()), ground_size(10),
-      axis(Eigen::Matrix<float, 6, 1>::Zero()), steps(0) {}
+      ground_E(Eigen::Matrix4f::Zero()), ground_size(10), steps(0) {}
 
 Model::Model(const Model &other)
     : h(other.h), tEnd(other.tEnd), substeps(other.substeps), bodies(nullptr),
@@ -21,7 +20,7 @@ Model::Model(const Model &other)
       layer_count(other.layer_count), constraint_layer_sizes(nullptr),
       body_layers(nullptr), body_layer_sizes(nullptr), gravity(other.gravity),
       iters(other.iters), ground_E(other.ground_E),
-      ground_size(other.ground_size), axis(other.axis), steps(other.steps) {
+      ground_size(other.ground_size), steps(other.steps) {
 #ifdef __CUDA_ARCH__
   // we are on the device; don't copy the bodies
 #else
@@ -35,6 +34,22 @@ Model::Model(const Model &other)
     bodies = new Body[other.body_count];
     memcpy(bodies, other.bodies, size);
   }
+#endif
+}
+
+// Model::~Model() {
+//   global_store.deallocate();
+// }
+
+void Model::create_store() {
+  // TODO: handle other types of bodies
+  data::SOAStore data_store(this->body_count);
+
+#ifdef USE_CUDA
+  cudaMemcpyToSymbol("data::global_store", &data_store, sizeof(data::SOAStore),
+                     size_t(0), cudaMemcpyHostToDevice);
+#else
+  data::global_store = std::move(data_store);
 #endif
 }
 

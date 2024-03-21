@@ -31,9 +31,9 @@ struct ConstraintGround {
                                        Eigen::Vector3f xw, Eigen::Vector3f nw,
                                        Eigen::Vector3f vw);
 
-  __host__ __device__ vec7 computeDx(float dlambda,
-                                     Eigen::Vector3f frictionalContactNormal);
-  __host__ __device__ float solvePosDir1(float c, Eigen::Vector3f nw);
+  __host__ __device__ vec7
+  computeDx(float dlambda, Eigen::Vector3f frictionalContactNormal) const;
+  __host__ __device__ float solvePosDir1(float c, Eigen::Vector3f nw) const;
   __host__ __device__ void solveNorPos(float hs);
   __host__ __device__ void applyJacobi();
 };

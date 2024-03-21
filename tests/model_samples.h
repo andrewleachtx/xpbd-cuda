@@ -23,7 +23,7 @@ apbd::Model createModelSample(int modelID) {
     float mu = 0.1;
 
     model.ground_size = 10;
-    model.axis = 5 * Eigen::Matrix<float, 6, 1>(-1, 1, -1, 1, 0, 1);
+    // model.axis = 5 * Eigen::Matrix<float, 6, 1>(-1, 1, -1, 1, 0, 1);
 
     model.body_count = 2;
     model.bodies = new apbd::Body[2];
@@ -61,7 +61,7 @@ apbd::Model createModelSample(int modelID) {
     float mu = 0.1;
 
     model.ground_size = 10;
-    model.axis = 5 * Eigen::Matrix<float, 6, 1>(-1, 1, -1, 1, 0, 1);
+    // model.axis = 5 * Eigen::Matrix<float, 6, 1>(-1, 1, -1, 1, 0, 1);
     // model.drawHz = 10000;
 
     // model.view = [0 0];
@@ -101,7 +101,7 @@ apbd::Model createModelSample(int modelID) {
     model.ground_E = Eigen::Matrix4f::Identity();
 
     model.ground_size = 20;
-    model.axis = 10 * Eigen::Matrix<float, 6, 1>(-1, 1, -1, 1, 0, 1);
+    // model.axis = 10 * Eigen::Matrix<float, 6, 1>(-1, 1, -1, 1, 0, 1);
     // model.drawHz = 30;
 
     model.body_count = 1;

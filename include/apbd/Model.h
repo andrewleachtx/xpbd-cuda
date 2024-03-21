@@ -2,6 +2,7 @@
 #include "Body.h"
 #include "Collider.h"
 #include "Constraint.h"
+#include "data/soa.h"
 #include <cstddef>
 
 namespace apbd {
@@ -36,7 +37,6 @@ public:
 
   Eigen::Matrix4f ground_E;
   float ground_size;
-  Eigen::Matrix<float, 6, 1> axis;
 
   // derived
   unsigned int steps;
@@ -74,5 +74,6 @@ public:
    */
   __host__ __device__ void write_state(unsigned int step);
   __host__ __device__ void print_config();
+  void create_store();
 };
 } // namespace apbd

@@ -7,6 +7,11 @@ else()
     add_compile_options(-Wall -Wextra -pedantic -Werror)
 endif()
 
+target_compile_options(performance PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+                       --generate-line-info
+                       --relocatable-device-code=true
+                       >)
+
 set_property(TARGET integration PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 set_property(TARGET performance PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 set_property(TARGET integration PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)

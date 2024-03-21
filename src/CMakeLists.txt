@@ -32,6 +32,13 @@ set_target_properties(utils-lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 target_include_directories(utils-lib PUBLIC ../include)
 
+# data
+file(GLOB DATA_HEADER_LIST CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/data/*.h")
+add_library(data-lib STATIC data/soa.cu ${DATA_HEADER_LIST})
+set_target_properties(data-lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
+target_include_directories(data-lib PUBLIC ../include)
+
 # apbd
 file(GLOB APBD_HEADER_LIST CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/apbd/*.h")
 
@@ -40,7 +47,7 @@ set_target_properties(apbd-lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 target_include_directories(apbd-lib PUBLIC ../include)
 
-target_link_libraries(apbd-lib PUBLIC se3-lib svd3_cuda jgt-lib cbb-lib utils-lib)
+target_link_libraries(apbd-lib PUBLIC se3-lib svd3_cuda jgt-lib cbb-lib utils-lib data-lib)
 
 source_group(
   TREE "${PROJECT_SOURCE_DIR}/include"

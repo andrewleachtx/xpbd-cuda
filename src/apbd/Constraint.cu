@@ -156,38 +156,40 @@ void ConstraintGround::solveNorPos(float hs) {
   }
 }
 
-float ConstraintGround::solvePosDir1(float c, Eigen::Vector3f nw) {
+float ConstraintGround::solvePosDir1(float c, Eigen::Vector3f nw) const {
   // Use the provided normal rather than normalizing
-  auto m1 = this->body->Mp;
-  auto I1 = this->body->Mr;
-  Quaternionf q1 = Quaternionf(this->body->x.block<4, 1>(0, 0));
-  Vector3f nl1 = se3::invert_q(q1) * nw;
-  Vector3f rl1 = this->xl;
-  Vector3f rnl1 = rl1.cross(nl1);
-  float w1 = (1 / m1) + rnl1.transpose() * Vector3f(rnl1.array() / I1.array());
-  float numerator = -c;
-  float denominator = w1;
+  const auto m1 = this->body->Mp;
+  const auto I1 = this->body->Mr;
+  const Quaternionf q1 = Quaternionf(this->body->x.block<4, 1>(0, 0));
+  const Vector3f nl1 = se3::invert_q(q1) * nw;
+  const Vector3f rl1 = this->xl;
+  const Vector3f rnl1 = rl1.cross(nl1);
+  const float w1 =
+      (1 / m1) + rnl1.transpose() * Vector3f(rnl1.array() / I1.array());
+  const float numerator = -c;
+  const float denominator = w1;
   return numerator / denominator;
 }
 
-vec7 ConstraintGround::computeDx(float dlambda, Eigen::Vector3f nw) {
+vec7 ConstraintGround::computeDx(float dlambda, Eigen::Vector3f nw) const {
 
-  float m1 = body->Mp;
-  Vector3f I1 = body->Mr;
+  const float m1 = body->Mp;
+  const Vector3f I1 = body->Mr;
   // Position update
-  Vector3f dpw = dlambda * nw;
-  Vector3f dp = dpw / m1;
+  const Vector3f dpw = dlambda * nw;
+  const Vector3f dp = dpw / m1;
   // Quaternion update
-  Quaternionf q1 = Quaternionf(Eigen::Vector4f(body->x1_0.block<4, 1>(0, 0)));
-  auto dpl1 = se3::qRotInv(q1.coeffs(), dpw);
+  const Quaternionf q1 =
+      Quaternionf(Eigen::Vector4f(body->x1_0.block<4, 1>(0, 0)));
+  const auto dpl1 = se3::qRotInv(q1.coeffs(), dpw);
   // auto dpl1 = (se3::invert_q(q1) * dpw);
   Vector4f q2vec;
   q2vec << se3::qRot(q1.coeffs(), (xl.cross(dpl1).array() / I1.array())), 0;
   // q2vec << (q1 * (xl.cross(dpl1).array() / I1.array())), 0;
   // qtmp1 = [I1.\se3.cross(rl1,dpl1); 0];
   // dq = se3.qMul(sin(0.5*qtmp1),q1);
-  Quaternionf q2(q2vec);
-  Vector4f dq = 0.5 * se3::qMul(q2.coeffs(), q1.coeffs());
+  const Quaternionf q2(q2vec);
+  const Vector4f dq = 0.5 * se3::qMul(q2.coeffs(), q1.coeffs());
   // Vector4f dq = 0.5 * (q2 * q1).coeffs();
   vec7 out;
   out << dq, dp;
