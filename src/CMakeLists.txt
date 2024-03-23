@@ -3,6 +3,9 @@ file(GLOB CBB_HEADER_LIST CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/colli
 
 add_library(cbb-lib STATIC collideBoxBox/odeBoxBox.cu ${CBB_HEADER_LIST})
 set_target_properties(cbb-lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_compile_options(cbb-lib PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+                       --generate-line-info
+                       >)
 
 target_include_directories(cbb-lib PUBLIC ../include)
 
@@ -13,6 +16,9 @@ file(GLOB SE3_HEADER_LIST CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/se3/*
 
 add_library(se3-lib STATIC se3/lib.cu ${SE3_HEADER_LIST})
 set_target_properties(se3-lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_compile_options(se3-lib PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+                       --generate-line-info
+                       >)
 
 target_include_directories(se3-lib PUBLIC ../include)
 
@@ -23,12 +29,18 @@ file(GLOB JGT_HEADER_LIST CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/JGT-f
 
 add_library(jgt-lib STATIC JGT-float/aabox.cu JGT-float/ray.cu JGT-float/smits_mul.cu ${JGT_HEADER_LIST})
 set_target_properties(jgt-lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_compile_options(jgt-lib PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+                       --generate-line-info
+                       >)
 
 target_include_directories(jgt-lib PUBLIC ../include)
 
 # utils
 add_library(utils-lib STATIC util.cu ../include/util.h ../include/config.h)
 set_target_properties(utils-lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_compile_options(utils-lib PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+                       --generate-line-info
+                       >)
 
 target_include_directories(utils-lib PUBLIC ../include)
 
@@ -36,14 +48,21 @@ target_include_directories(utils-lib PUBLIC ../include)
 file(GLOB DATA_HEADER_LIST CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/data/*.h")
 add_library(data-lib STATIC data/soa.cu ${DATA_HEADER_LIST})
 set_target_properties(data-lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_compile_options(data-lib PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+                       --generate-line-info
+                       >)
 
 target_include_directories(data-lib PUBLIC ../include)
+target_link_libraries(data-lib PUBLIC Eigen3::Eigen)
 
 # apbd
 file(GLOB APBD_HEADER_LIST CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/apbd/*.h")
 
-add_library(apbd-lib STATIC apbd/Model.cu apbd/Body.cu apbd/Collider.cu apbd/Constraint.cu apbd/Shape.cu ${APBD_HEADER_LIST} ../include/config.h)
+add_library(apbd-lib STATIC apbd/Model.cu apbd/Body.cu apbd/BodyReference.cu apbd/Collider.cu apbd/Constraint.cu apbd/Shape.cu ${APBD_HEADER_LIST} ../include/config.h)
 set_target_properties(apbd-lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_compile_options(apbd-lib PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+                       --generate-line-info
+                       >)
 
 target_include_directories(apbd-lib PUBLIC ../include)
 

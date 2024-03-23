@@ -75,5 +75,6 @@ public:
   __host__ __device__ void write_state(unsigned int step);
   __host__ __device__ void print_config();
   void create_store();
+  __host__ __device__ void copy_data_to_store();
 };
 } // namespace apbd

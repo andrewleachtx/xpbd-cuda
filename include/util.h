@@ -51,6 +51,8 @@
   {}
 #endif
 
+using byte = unsigned char;
+
 void *alloc_device_bytes(size_t bytes);
 template <typename T> T *alloc_device(size_t count) {
   size_t bytes = count * sizeof(T);

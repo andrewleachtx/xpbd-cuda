@@ -46,11 +46,18 @@ void Model::create_store() {
   data::SOAStore data_store(this->body_count);
 
 #ifdef USE_CUDA
-  cudaMemcpyToSymbol("data::global_store", &data_store, sizeof(data::SOAStore),
-                     size_t(0), cudaMemcpyHostToDevice);
+  cudaMemcpyToSymbol(data::device_global_store, &data_store,
+                     sizeof(data::SOAStore), size_t(0), cudaMemcpyHostToDevice);
 #else
   data::global_store = std::move(data_store);
 #endif
+}
+
+void Model::copy_data_to_store() {
+  for (size_t i = 0; i < this->body_count; i++) {
+    // TODO: handle multiple body types
+    data::global_store.BodyRigid.set(i, this->bodies[i].data.rigid);
+  }
 }
 
 void Model::init() {

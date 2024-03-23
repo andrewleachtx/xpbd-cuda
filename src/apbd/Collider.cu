@@ -98,7 +98,8 @@ void Collider::narrowphase(Model *model) {
     auto cpair = body1->narrowphaseRigid(body2);
     auto cdata = cpair.first;
     auto c_count = cpair.second;
-    for (size_t k = 0; k < c_count; k++) {
+    for (size_t k = 0; k < c_count && this->collision_count < MAX_COLLISIONS;
+         k++) {
       auto &c = cdata[k];
       switch (body1->type) {
       case BODY_RIGID: {
