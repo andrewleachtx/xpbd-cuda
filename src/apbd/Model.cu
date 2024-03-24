@@ -27,12 +27,14 @@ Model::Model(const Model &other)
   cudaPointerAttributes attributes;
   CUDA_CHECK(cudaPointerGetAttributes(&attributes, other.bodies));
   if (attributes.type == cudaMemoryTypeDevice) {
-    bodies = alloc_device<Body>(other.body_count);
+    bodies = alloc_device<BodyReference>(other.body_count);
     memcpy_device(bodies, other.bodies, other.body_count);
   } else {
-    size_t size = other.body_count * sizeof(Body);
-    bodies = new Body[other.body_count];
-    memcpy(bodies, other.bodies, size);
+    size_t size = other.body_count * sizeof(BodyReference);
+    if (other.bodies != nullptr) {
+      bodies = new BodyReference[other.body_count];
+      memcpy(bodies, other.bodies, size);
+    }
   }
 #endif
 }
@@ -41,9 +43,9 @@ Model::Model(const Model &other)
 //   global_store.deallocate();
 // }
 
-void Model::create_store() {
+void Model::create_store(size_t scene_count) {
   // TODO: handle other types of bodies
-  data::SOAStore data_store(this->body_count);
+  data::SOAStore data_store(this->body_count, scene_count);
 
 #ifdef USE_CUDA
   cudaMemcpyToSymbol(data::device_global_store, &data_store,
@@ -53,20 +55,33 @@ void Model::create_store() {
 #endif
 }
 
-void Model::copy_data_to_store() {
+void Model::copy_data_to_store(Body *body_array) {
   for (size_t i = 0; i < this->body_count; i++) {
-    // TODO: handle multiple body types
-    data::global_store.BodyRigid.set(i, this->bodies[i].data.rigid);
+    auto &body = body_array[i];
+    switch (body.type) {
+    case BODY_RIGID: {
+      data::global_store.BodyRigid.set(i, body.data.rigid);
+      auto br = BodyReference(i, body.type);
+      auto brr = br.get_rigid();
+      brr.init(body.data.rigid.xInit);
+      this->bodies[i] = br;
+      break;
+    }
+    default:
+      break;
+    }
   }
+  this->write_state(0);
 }
 
-void Model::init() {
+void Model::init(Body *body_array) {
   // initialize bodies
   // if (this->bodies == nullptr) {
   //   throw std::runtime_error("Bodies not initialized");
   // }
   for (size_t i = 0; i < this->body_count; i++) {
-    this->bodies[i].init();
+    // this->bodies[i].init(body_array[i]);
+    this->bodies[i] = BodyReference(i, body_array[i].type);
   }
   // create constraints
   // if (this->constraints == nullptr && this->constraint_count) {
@@ -81,7 +96,6 @@ void Model::init() {
   // this->k = 0;
   // this->ks
   this->print_config();
-  this->write_state(0);
 }
 
 void Model::move_to_device() {
@@ -90,14 +104,15 @@ void Model::move_to_device() {
   // TODO: layers
 }
 
-__device__ Model Model::clone_with_buffers(const Model &other, size_t scene_id,
-                                           Body *body_buffer) {
-  Model new_model(other);
-
-  new_model.bodies = &body_buffer[other.body_count * scene_id];
-  memcpy_device(new_model.bodies, other.bodies, other.body_count);
-  return new_model;
-}
+// __device__ Model Model::clone_with_buffers(const Model &other, size_t
+// scene_id,
+//                                            BodyReference *body_buffer) {
+//   Model new_model(other);
+//
+//   new_model.bodies = &body_buffer[other.body_count * scene_id];
+//   memcpy_device(new_model.bodies, other.bodies, other.body_count);
+//   return new_model;
+// }
 
 void Model::simulate(Collider *collider) {
   float time = 0;

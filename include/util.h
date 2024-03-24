@@ -51,6 +51,9 @@
   {}
 #endif
 
+extern thread_local size_t _thread_scene_id;
+extern size_t _global_scene_count;
+
 using byte = unsigned char;
 
 void *alloc_device_bytes(size_t bytes);

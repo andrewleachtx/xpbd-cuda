@@ -1,8 +1,8 @@
 #pragma once
 
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
+#include "apbd/BodyReference.h"
 #include <Eigen/Dense>
-#include <apbd/Body.h>
 
 namespace apbd {
 
@@ -20,16 +20,16 @@ struct ConstraintGround {
   float d;
   float dlambdaNor;
   bool shockProp;
-  BodyRigid *body;
+  BodyRigidReference body;
   Eigen::Matrix4f Eg;
   Eigen::Vector3f xl;
   Eigen::Vector3f xw;
   Eigen::Vector3f vw;
 
-  __host__ __device__ ConstraintGround(BodyRigid *body, Eigen::Matrix4f Eg,
-                                       float d, Eigen::Vector3f xl,
-                                       Eigen::Vector3f xw, Eigen::Vector3f nw,
-                                       Eigen::Vector3f vw);
+  __host__ __device__ ConstraintGround(BodyRigidReference body,
+                                       Eigen::Matrix4f Eg, float d,
+                                       Eigen::Vector3f xl, Eigen::Vector3f xw,
+                                       Eigen::Vector3f nw, Eigen::Vector3f vw);
 
   __host__ __device__ vec7
   computeDx(float dlambda, Eigen::Vector3f frictionalContactNormal) const;
@@ -46,14 +46,15 @@ struct ConstraintRigid {
   float d;
   float dlambdaNor;
   bool shockProp;
-  BodyRigid *body1;
-  BodyRigid *body2;
+  BodyRigidReference body1;
+  BodyRigidReference body2;
   Eigen::Vector3f x1;
   Eigen::Vector3f x2;
 
-  __host__ __device__ ConstraintRigid(BodyRigid *body1, BodyRigid *body2,
-                                      float d, Eigen::Vector3f nw,
-                                      Eigen::Vector3f x1, Eigen::Vector3f x2);
+  __host__ __device__ ConstraintRigid(BodyRigidReference body1,
+                                      BodyRigidReference body2, float d,
+                                      Eigen::Vector3f nw, Eigen::Vector3f x1,
+                                      Eigen::Vector3f x2);
 
   __host__ __device__ void solveNorPos(float hs);
   __host__ __device__ float solvePosDir2(float c, Eigen::Vector3f nw);
@@ -68,8 +69,8 @@ struct ConstraintJointRevolve {
   Eigen::Vector3f C;
   Eigen::Vector3f lambda;
   bool shockProp;
-  BodyRigid *body1;
-  BodyRigid *body2;
+  BodyRigidReference body1;
+  BodyRigidReference body2;
   Eigen::Vector4f ql1;
   Eigen::Vector4f pl1;
   Eigen::Vector4f ql2;

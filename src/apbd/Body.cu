@@ -303,7 +303,7 @@ bool Body::broadphaseRigid(Body *other) {
     Eigen::Matrix4f E1 = data.computeTransform();
     Eigen::Matrix4f E2 = other->computeTransform();
     // TODO: handle shape for affine
-    return data.shape.broadphaseShape(E1, &other->data.rigid.shape, E2);
+    return data.shape.broadphaseShape(E1, other->data.rigid.shape, E2);
   }
   default:
     break;
@@ -323,7 +323,7 @@ Body::narrowphaseRigid(Body *other) {
     Eigen::Matrix4f E1 = data.computeTransform();
     Eigen::Matrix4f E2 = other->computeTransform();
     // TODO: handle shape for affine
-    return data.shape.narrowphaseShape(E1, &other->data.rigid.shape, E2);
+    return data.shape.narrowphaseShape(E1, other->data.rigid.shape, E2);
   }
   default:
     return cuda::std::pair(cuda::std::array<CollisionRigid, 8>(), 0);

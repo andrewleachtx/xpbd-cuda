@@ -11,13 +11,13 @@ using std::cout, std::endl, std::string, std::runtime_error;
 typedef std::chrono::high_resolution_clock Clock;
 
 __global__ void kernel(apbd::Model model, apbd::Body *body_buffer,
-                       apbd::Body **body_ptr_buffer,
+                       apbd::BodyReference *body_ptr_buffer,
                        apbd::Constraint *constraint_buffer, int sims) {
   // get this scene ID
   size_t scene_id = blockIdx.x * blockDim.x + threadIdx.x;
   if (scene_id >= sims)
     return;
-  model.copy_data_to_store();
+  model.copy_data_to_store(body_buffer);
   auto r = apbd::BodyReference(0, apbd::BODY_RIGID);
   auto b = r.get_rigid();
 
@@ -33,7 +33,7 @@ __global__ void kernel(apbd::Model model, apbd::Body *body_buffer,
   // thread_model.simulate(&collider);
 }
 
-void run_kernel(apbd::Model model, int sims) {
+void run_kernel(apbd::Model model, apbd::Body *bodies, int sims) {
   cout << "thread blocks: " << (sims + BLOCK_SIZE - 1) / BLOCK_SIZE << endl;
 
   // const size_t shared_size = c.constraints.size() * sizeof(Constraint);
@@ -41,9 +41,7 @@ void run_kernel(apbd::Model model, int sims) {
   // std::cout << "kernel shared_size: " << shared_size << " = " <<
   // c.constraints.size() << " * " << sizeof(Constraint) << std::endl;
 
-  size_t body_buffer_size = sims * model.body_count;
-  apbd::Body *body_buffer = alloc_device<apbd::Body>(body_buffer_size);
-  apbd::Body **body_ptr_buffer = nullptr;
+  apbd::BodyReference *body_ptr_buffer = nullptr;
   apbd::Constraint *constraint_buffer = nullptr;
   apbd::Collider::allocate_buffers(model, sims, body_ptr_buffer,
                                    constraint_buffer);
@@ -54,7 +52,7 @@ void run_kernel(apbd::Model model, int sims) {
   auto t1 = Clock::now();
 
   kernel<<<(sims + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, shared_size>>>(
-      model, body_buffer, body_ptr_buffer, constraint_buffer, sims);
+      model, bodies, body_ptr_buffer, constraint_buffer, sims);
   CUDA_CHECK(cudaGetLastError());
   CUDA_CHECK(cudaDeviceSynchronize());
 
@@ -64,13 +62,14 @@ void run_kernel(apbd::Model model, int sims) {
 
 int main(int argc, char *argv[]) {
   // auto state = parse_arguments(argc, argv);
-  auto model = createModelSample(atoi(argv[1]));
-  model.create_store();
+  apbd::Body *bodies;
+  auto model = createModelSample(atoi(argv[1]), bodies, 2);
+  model.create_store(2);
 
   // auto t1 = Clock::now();
 #ifdef USE_CUDA
   cout << "Running with CUDA" << endl;
-  run_kernel(model, 1);
+  run_kernel(model, bodies, 2);
 #else
   // cout << "Running on CPU" << endl;
   // cpu_run_group(model, state.scene_count);

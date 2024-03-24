@@ -14,14 +14,16 @@ Constraint::Constraint(ConstraintGround ground)
 Constraint::Constraint(ConstraintJointRevolve revolve)
     : type(CONSTRAINT_JOINT_REVOLVE), data{.joint_revolve = {revolve}} {}
 
-ConstraintGround::ConstraintGround(BodyRigid *body, Eigen::Matrix4f Eg, float d,
-                                   Eigen::Vector3f xl, Eigen::Vector3f xw,
-                                   Eigen::Vector3f nw, Eigen::Vector3f vw)
+ConstraintGround::ConstraintGround(BodyRigidReference body, Eigen::Matrix4f Eg,
+                                   float d, Eigen::Vector3f xl,
+                                   Eigen::Vector3f xw, Eigen::Vector3f nw,
+                                   Eigen::Vector3f vw)
     : C(Vector3f::Zero()), lambda(Vector3f::Zero()), nw(nw),
       lambdaSF(Vector3f::Zero()), d(0), dlambdaNor(0), shockProp(false),
       body(body), Eg(Eg), xl(xl), xw(xw), vw(vw) {}
 
-ConstraintRigid::ConstraintRigid(BodyRigid *body1, BodyRigid *body2, float d,
+ConstraintRigid::ConstraintRigid(BodyRigidReference body1,
+                                 BodyRigidReference body2, float d,
                                  Eigen::Vector3f nw, Eigen::Vector3f x1,
                                  Eigen::Vector3f x2)
     : C(Vector3f::Zero()), lambda(Vector3f::Zero()), nw(nw),
@@ -106,7 +108,7 @@ void Constraint::solve(float hs, bool doShockProp) {
 }
 
 void ConstraintGround::solveNorPos(float hs) {
-  Vector3f v = hs * body->computePointVel(xl, hs);
+  Vector3f v = hs * body.computePointVel(xl, hs);
   float vNorm = v.norm();
   Vector3f vNormalized = v / vNorm;
   Vector3f tx = Eg.block<3, 1>(0, 0);
@@ -124,7 +126,7 @@ void ConstraintGround::solveNorPos(float hs) {
     dlambdaNor = -lambda(0);
   }
   lambda(0) += dlambdaNor;
-  float mu = body->mu;
+  float mu = this->body.mu();
   Vector2f dlambdaTan = Vector2f::Zero();
   if (mu > 0) {
     float dlambdaTx = dlambda * vNormalizedContactFrame(1);
@@ -151,16 +153,15 @@ void ConstraintGround::solveNorPos(float hs) {
     tmp << nw, tx, ty;
     Vector3f frictionalContactNormal = tmp * frictionalContactLambda / dlambda;
     vec7 dq = computeDx(dlambda, frictionalContactNormal);
-    body->dxJacobi.block<4, 1>(0, 0) += dq.block<4, 1>(0, 0);
-    body->dxJacobi.block<3, 1>(4, 0) += dq.block<3, 1>(4, 0);
+    this->body.dxJacobi(this->body.dxJacobi() + dq);
   }
 }
 
 float ConstraintGround::solvePosDir1(float c, Eigen::Vector3f nw) const {
   // Use the provided normal rather than normalizing
-  const auto m1 = this->body->Mp;
-  const auto I1 = this->body->Mr;
-  const Quaternionf q1 = Quaternionf(this->body->x.block<4, 1>(0, 0));
+  const auto m1 = this->body.Mp();
+  const auto I1 = this->body.Mr();
+  const Quaternionf q1 = this->body.rotation();
   const Vector3f nl1 = se3::invert_q(q1) * nw;
   const Vector3f rl1 = this->xl;
   const Vector3f rnl1 = rl1.cross(nl1);
@@ -172,15 +173,13 @@ float ConstraintGround::solvePosDir1(float c, Eigen::Vector3f nw) const {
 }
 
 vec7 ConstraintGround::computeDx(float dlambda, Eigen::Vector3f nw) const {
-
-  const float m1 = body->Mp;
-  const Vector3f I1 = body->Mr;
+  const float m1 = this->body.Mp();
+  const Vector3f I1 = this->body.Mr();
   // Position update
   const Vector3f dpw = dlambda * nw;
   const Vector3f dp = dpw / m1;
   // Quaternion update
-  const Quaternionf q1 =
-      Quaternionf(Eigen::Vector4f(body->x1_0.block<4, 1>(0, 0)));
+  const Quaternionf q1 = this->body.x1_0_rot();
   const auto dpl1 = se3::qRotInv(q1.coeffs(), dpw);
   // auto dpl1 = (se3::invert_q(q1) * dpw);
   Vector4f q2vec;
@@ -196,16 +195,16 @@ vec7 ConstraintGround::computeDx(float dlambda, Eigen::Vector3f nw) const {
   return out;
 }
 
-void ConstraintGround::applyJacobi() { body->applyJacobi(); }
+void ConstraintGround::applyJacobi() { this->body.applyJacobi(); }
 void ConstraintRigid::applyJacobi() {
-  body1->applyJacobi();
-  body2->applyJacobi();
+  this->body1.applyJacobi();
+  this->body2.applyJacobi();
 }
 
 void ConstraintRigid::solveNorPos(float hs) {
 
-  Vector3f v1w = this->body1->computePointVel(this->x1, hs);
-  Vector3f v2w = this->body2->computePointVel(this->x2, hs);
+  Vector3f v1w = this->body1.computePointVel(this->x1, hs);
+  Vector3f v2w = this->body2.computePointVel(this->x2, hs);
   Vector3f v = hs * (v1w - v2w);
   float vNorm = v.norm();
   Vector3f vNormalized = v / vNorm;
@@ -225,8 +224,8 @@ void ConstraintRigid::solveNorPos(float hs) {
     dlambdaNor = -this->lambda(0);
   }
   this->lambda(0) = this->lambda(0) + dlambdaNor;
-  float mu1 = this->body1->mu;
-  float mu2 = this->body2->mu;
+  float mu1 = this->body1.mu();
+  float mu2 = this->body2.mu();
   float mu = 0.5 * (mu1 + mu2);
   Vector2f dlambdaTan{0, 0};
   if (mu > 0) {
@@ -256,24 +255,21 @@ void ConstraintRigid::solveNorPos(float hs) {
     Vector3f dp1, dp2;
     this->computeDx(dlambda, frictionalContactNormal, &dq1, &dp1, &dq2, &dp2);
     if (this->shockProp) {
-      this->body1->dxJacobiShock.block<4, 1>(0, 0) += dq1;
-      this->body1->dxJacobiShock.block<3, 1>(4, 0) += dp1;
+      this->body1.dxJacobiShock(dq1, dp1);
     } else {
-      this->body1->dxJacobi.block<4, 1>(0, 0) += dq1;
-      this->body1->dxJacobi.block<3, 1>(4, 0) += dp1;
+      this->body1.dxJacobi(dq1, dp1);
     }
-    this->body2->dxJacobi.block<4, 1>(0, 0) += dq2;
-    this->body2->dxJacobi.block<3, 1>(4, 0) += dp2;
+    this->body2.dxJacobi(dq2, dp2);
   }
 }
 float ConstraintRigid::solvePosDir2(float c, Eigen::Vector3f nw) {
   // Use the provided normal rather than normalizing
-  auto m1 = this->body1->Mp;
-  auto m2 = this->body2->Mp;
-  auto I1 = this->body1->Mr;
-  auto I2 = this->body2->Mr;
-  Quaternionf q1 = Quaternionf(this->body1->x.block<4, 1>(0, 0));
-  Quaternionf q2 = Quaternionf(this->body2->x.block<4, 1>(0, 0));
+  auto m1 = this->body1.Mp();
+  auto m2 = this->body2.Mp();
+  auto I1 = this->body1.Mr();
+  auto I2 = this->body2.Mr();
+  Quaternionf q1 = this->body1.x1_0_rot();
+  Quaternionf q2 = this->body2.x1_0_rot();
   Vector3f nl1 = se3::invert_q(q1) * nw;
   Vector3f nl2 = se3::invert_q(q2) * nw;
   Vector3f rl1 = this->x1;
@@ -290,17 +286,17 @@ float ConstraintRigid::solvePosDir2(float c, Eigen::Vector3f nw) {
 void ConstraintRigid::computeDx(float dlambda, Eigen::Vector3f nw,
                                 Vector4f *dq1, Vector3f *dp1, Vector4f *dq2,
                                 Vector3f *dp2) {
-  auto m1 = this->body1->Mp;
-  auto m2 = this->body2->Mp;
-  auto I1 = this->body1->Mr;
-  auto I2 = this->body2->Mr;
+  auto m1 = this->body1.Mp();
+  auto m2 = this->body2.Mp();
+  auto I1 = this->body1.Mr();
+  auto I2 = this->body2.Mr();
   // Position update
   Vector3f dpw = dlambda * nw;
   *dp1 = dpw / m1;
   *dp2 = -dpw / m2;
   // Quaternion update
-  Quaternionf q1 = Quaternionf(this->body1->x1_0.block<4, 1>(0, 0));
-  Quaternionf q2 = Quaternionf(this->body2->x1_0.block<4, 1>(0, 0));
+  Quaternionf q1 = this->body1.x1_0_rot();
+  Quaternionf q2 = this->body2.x1_0_rot();
   Vector3f dpl1 = se3::qRotInv(q1.coeffs(), dpw);
   Vector3f dpl2 = se3::qRotInv(q2.coeffs(), dpw);
   // Vector3f dpl1 = se3::invert_q(q1) * dpw;

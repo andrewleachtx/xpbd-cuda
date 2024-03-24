@@ -1,5 +1,5 @@
 #pragma once
-#include "Body.h"
+#include "BodyReference.h"
 #include "Collider.h"
 #include "Constraint.h"
 #include "data/soa.h"
@@ -23,7 +23,7 @@ public:
    */
   float tEnd;
   unsigned int substeps;
-  Body *bodies;
+  BodyReference *bodies;
   size_t body_count;
   Constraint *constraints;
   size_t constraint_count;
@@ -58,12 +58,13 @@ public:
    */
   __host__ __device__ Model(const Model &other);
   void move_to_device();
-  __device__ static Model
-  clone_with_buffers(const Model &other, size_t scene_id, Body *body_buffer);
+  __device__ static Model clone_with_buffers(const Model &other,
+                                             size_t scene_id,
+                                             BodyReference *body_buffer);
   /**
    * Initializes the model objects based on configuration
    */
-  __host__ __device__ void init(/* TODO */);
+  __host__ __device__ void init(Body *bodies);
   /**
    * Runs all simulations to completion
    */
@@ -74,7 +75,7 @@ public:
    */
   __host__ __device__ void write_state(unsigned int step);
   __host__ __device__ void print_config();
-  void create_store();
-  __host__ __device__ void copy_data_to_store();
+  void create_store(size_t scene_count);
+  __host__ __device__ void copy_data_to_store(Body *body_array);
 };
 } // namespace apbd

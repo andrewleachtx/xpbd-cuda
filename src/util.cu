@@ -1,5 +1,8 @@
 #include "util.h"
 
+thread_local size_t _thread_scene_id = 0;
+size_t _global_scene_count = 0;
+
 void *alloc_device_bytes(size_t bytes) {
 #ifdef USE_CUDA
   void *device_ptr;

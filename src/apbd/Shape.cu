@@ -86,14 +86,13 @@ Shape::narrowphaseGround(Eigen::Matrix4f E, Eigen::Matrix4f Eg) {
   }
 }
 
-bool Shape::broadphaseShape(Eigen::Matrix4f E1, Shape *other,
+bool Shape::broadphaseShape(Eigen::Matrix4f E1, const Shape &other,
                             Eigen::Matrix4f E2) {
   switch (type) {
   case SHAPE_CUBOID:
     switch (type) {
     case SHAPE_CUBOID:
-      return this->data.cuboid.broadphaseShapeCuboid(E1, &other->data.cuboid,
-                                                     E2);
+      return this->data.cuboid.broadphaseShapeCuboid(E1, other.data.cuboid, E2);
     default:
       return false;
     }
@@ -103,12 +102,13 @@ bool Shape::broadphaseShape(Eigen::Matrix4f E1, Shape *other,
 }
 
 cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t>
-Shape::narrowphaseShape(Eigen::Matrix4f E1, Shape *other, Eigen::Matrix4f E2) {
+Shape::narrowphaseShape(Eigen::Matrix4f E1, const Shape &other,
+                        Eigen::Matrix4f E2) {
   switch (type) {
   case SHAPE_CUBOID:
     switch (type) {
     case SHAPE_CUBOID:
-      return this->data.cuboid.narrowphaseShapeCuboid(E1, &other->data.cuboid,
+      return this->data.cuboid.narrowphaseShapeCuboid(E1, other.data.cuboid,
                                                       E2);
     default:
       return cuda::std::pair(cuda::std::array<CollisionRigid, 8>(), 0);
@@ -118,19 +118,21 @@ Shape::narrowphaseShape(Eigen::Matrix4f E1, Shape *other, Eigen::Matrix4f E2) {
   }
 }
 
-bool ShapeCuboid::broadphaseShapeCuboid(Eigen::Matrix4f E1, ShapeCuboid *other,
+bool ShapeCuboid::broadphaseShapeCuboid(Eigen::Matrix4f E1,
+                                        const ShapeCuboid &other,
                                         Eigen::Matrix4f E2) {
 
   Eigen::Vector3f p1 = E1.block<3, 1>(0, 3);
   Eigen::Vector3f p2 = E2.block<3, 1>(0, 3);
   float d = (p1 - p2).norm();
-  float r1 = (this->sides / 2).norm();  // dist to a corner
-  float r2 = (other->sides / 2).norm(); // dist to a corner
+  float r1 = (this->sides / 2).norm(); // dist to a corner
+  float r2 = (other.sides / 2).norm(); // dist to a corner
   return d < 1.5 * (r1 + r2);
 }
 
 cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t>
-ShapeCuboid::narrowphaseShapeCuboid(Eigen::Matrix4f E1, ShapeCuboid *other,
+ShapeCuboid::narrowphaseShapeCuboid(Eigen::Matrix4f E1,
+                                    const ShapeCuboid &other,
                                     Eigen::Matrix4f E2) {
   cuda::std::array<CollisionRigid, 8> cdata{};
   Eigen::Matrix3f R1 = E1.block<3, 3>(0, 0);
@@ -138,7 +140,7 @@ ShapeCuboid::narrowphaseShapeCuboid(Eigen::Matrix4f E1, ShapeCuboid *other,
   Eigen::Vector3f p1 = E1.block<3, 1>(0, 3);
   Eigen::Vector3f p2 = E2.block<3, 1>(0, 3);
   auto &s1 = this->sides;
-  auto &s2 = other->sides;
+  auto &s2 = other.sides;
   auto collisions = odeBoxBox(E1, s1, E2, s2);
   Eigen::Vector3f nw =
       collisions.normal; // The normal is outward from body 1 (red)
@@ -158,7 +160,7 @@ ShapeCuboid::narrowphaseShapeCuboid(Eigen::Matrix4f E1, ShapeCuboid *other,
     x1 = x1 - t1 * n1;
 
     Eigen::Vector3f x2 = R2.transpose() * (xw - p2);
-    float t2 = other->raycast(x2, n2);
+    float t2 = other.raycast(x2, n2);
     x2 = x2 - t2 * n2; // negate since smits_mul returns negative t for rays
                        // starting inside the box
     cdata[i] = CollisionRigid{.d = d, .xw = xw, .nw = nw, .x1 = x1, .x2 = x2};
@@ -166,7 +168,7 @@ ShapeCuboid::narrowphaseShapeCuboid(Eigen::Matrix4f E1, ShapeCuboid *other,
   return cuda::std::pair(cdata, collisions.count);
 }
 
-float ShapeCuboid::raycast(Eigen::Vector3f x, Eigen::Vector3f n) {
+float ShapeCuboid::raycast(Eigen::Vector3f x, Eigen::Vector3f n) const {
   float thresh = 1e-6;
   Eigen::Vector3f bmax = 0.5 * this->sides;
   Eigen::Vector3f bmin = -bmax;
