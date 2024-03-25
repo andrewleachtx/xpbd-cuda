@@ -10,13 +10,13 @@ namespace apbd {
 struct ShapeCuboid {
   Eigen::Vector3f sides;
 
-  __host__ __device__ bool broadphaseShapeCuboid(Eigen::Matrix4f E1,
-                                                 const ShapeCuboid &other,
-                                                 Eigen::Matrix4f E2);
+  __host__ __device__ bool
+  broadphaseShapeCuboid(const Eigen::Matrix4f E1, const ShapeCuboid &other,
+                        const Eigen::Matrix4f E2) const;
   __host__
       __device__ cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t>
-      narrowphaseShapeCuboid(Eigen::Matrix4f E1, const ShapeCuboid &other,
-                             Eigen::Matrix4f E2);
+      narrowphaseShapeCuboid(const Eigen::Matrix4f E1, const ShapeCuboid &other,
+                             const Eigen::Matrix4f E2) const;
   __host__ __device__ float raycast(Eigen::Vector3f x, Eigen::Vector3f n) const;
 };
 
@@ -48,18 +48,21 @@ public:
   __host__ __device__ Shape(ShapeCuboid cuboid);
   __host__ __device__ Shape &operator=(const Shape &);
 
-  __host__ __device__ bool broadphaseGround(Eigen::Matrix4f E,
-                                            Eigen::Matrix4f Eg);
+  __host__ __device__ bool broadphaseGround(const Eigen::Matrix4f E,
+                                            const Eigen::Matrix4f Eg) const;
   __host__
       __device__ cuda::std::pair<cuda::std::array<CollisionGround, 8>, size_t>
-      narrowphaseGround(Eigen::Matrix4f E, Eigen::Matrix4f Eg);
-  __host__ __device__ bool
-  broadphaseShape(Eigen::Matrix4f E1, const Shape &other, Eigen::Matrix4f E2);
+      narrowphaseGround(const Eigen::Matrix4f E,
+                        const Eigen::Matrix4f Eg) const;
+  __host__ __device__ bool broadphaseShape(const Eigen::Matrix4f E1,
+                                           const Shape &other,
+                                           const Eigen::Matrix4f E2) const;
   __host__
       __device__ cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t>
-      narrowphaseShape(Eigen::Matrix4f E1, const Shape &other,
-                       Eigen::Matrix4f E2);
-  __host__ __device__ Eigen::Matrix<float, 6, 1> computeInertia(float density);
+      narrowphaseShape(const Eigen::Matrix4f E1, const Shape &other,
+                       const Eigen::Matrix4f E2) const;
+  __host__ __device__ Eigen::Matrix<float, 6, 1>
+  computeInertia(const float density) const;
 };
 
 } // namespace apbd
