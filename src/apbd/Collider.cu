@@ -119,17 +119,4 @@ void Collider::narrowphase(Model *model) {
   }
 }
 
-void Collider::generateTangents(Eigen::Vector3f nor, Eigen::Vector3f *tanx,
-                                Eigen::Vector3f *tany) {
-  Eigen::Vector3f tmp;
-  if (abs(nor(2)) < 1e-6) {
-    tmp << 0, 0, 1;
-  } else {
-    tmp << 1, 0, 0;
-  }
-  *tany = nor.cross(tmp);
-  *tany = *tany / tany->norm();
-  *tanx = tany->cross(nor);
-}
-
 } // namespace apbd
