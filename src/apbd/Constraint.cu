@@ -180,19 +180,17 @@ vec7 ConstraintGround::computeDx(float dlambda, Eigen::Vector3f nw) const {
   const Vector3f dp = dpw / m1;
   // Quaternion update
   const Quaternionf q1 = this->body.x1_0_rot();
-  const auto dpl1 = se3::qRotInv(q1.coeffs(), dpw);
-  // auto dpl1 = (se3::invert_q(q1) * dpw);
-  Vector4f q2vec;
-  q2vec << se3::qRot(q1.coeffs(), (xl.cross(dpl1).array() / I1.array())), 0;
+  // const auto dpl1 = se3::qRotInv(q1.coeffs(), dpw);
+  const auto dpl1 = (se3::invert_q(q1) * dpw);
+  const Vector3f q2vec = q1 * (xl.cross(dpl1).array() / I1.array());
+  // q2vec << se3::qRot(q1.coeffs(), (xl.cross(dpl1).array() / I1.array())), 0;
   // q2vec << (q1 * (xl.cross(dpl1).array() / I1.array())), 0;
   // qtmp1 = [I1.\se3.cross(rl1,dpl1); 0];
   // dq = se3.qMul(sin(0.5*qtmp1),q1);
-  const Quaternionf q2(q2vec);
-  const Vector4f dq = 0.5 * se3::qMul(q2.coeffs(), q1.coeffs());
-  // Vector4f dq = 0.5 * (q2 * q1).coeffs();
-  vec7 out;
-  out << dq, dp;
-  return out;
+  const Quaternionf q2(0, q2vec(0), q2vec(1), q2vec(2));
+  // const Vector4f dq = 0.5 * se3::qMul(q2.coeffs(), q1.coeffs());
+  const Vector4f dq = 0.5 * (q2 * q1).coeffs();
+  return vec7(dq(0), dq(1), dq(2), dq(3), dp(0), dp(1), dp(2));
 }
 
 void ConstraintGround::applyJacobi() { this->body.applyJacobi(); }
@@ -297,21 +295,21 @@ void ConstraintRigid::computeDx(float dlambda, Eigen::Vector3f nw,
   // Quaternion update
   Quaternionf q1 = this->body1.x1_0_rot();
   Quaternionf q2 = this->body2.x1_0_rot();
-  Vector3f dpl1 = se3::qRotInv(q1.coeffs(), dpw);
-  Vector3f dpl2 = se3::qRotInv(q2.coeffs(), dpw);
-  // Vector3f dpl1 = se3::invert_q(q1) * dpw;
-  // Vector3f dpl2 = se3::invert_q(q2) * dpw;
+  // Vector3f dpl1 = se3::qRotInv(q1.coeffs(), dpw);
+  // Vector3f dpl2 = se3::qRotInv(q2.coeffs(), dpw);
+  Vector3f dpl1 = se3::invert_q(q1) * dpw;
+  Vector3f dpl2 = se3::invert_q(q2) * dpw;
 
   // qtmp1 = [se3.qRot(q1,I1.\se3.cross(this.x1,dpl1)); 0];
-  Vector3f tmp =
-      se3::qRot(q1.coeffs(), (this->x1.cross(dpl1).array() / I1.array()));
-  // Vector3f tmp = q1 * (this->x1.cross(dpl1).array() / I1.array());
+  // Vector3f tmp =
+  //     se3::qRot(q1.coeffs(), (this->x1.cross(dpl1).array() / I1.array()));
+  Vector3f tmp = q1 * (this->x1.cross(dpl1).array() / I1.array());
   Quaternionf qtmp1(0, tmp.x(), tmp.y(), tmp.z());
 
   // qtmp2 = [se3.qRot(q2,I2.\se3.cross(this.x2,dpl2)); 0];
-  Vector3f tmp1 =
-      se3::qRot(q2.coeffs(), (this->x2.cross(dpl2).array() / I2.array()));
-  // Vector3f tmp1 = q2 * (this->x2.cross(dpl2).array() / I2.array());
+  // Vector3f tmp1 =
+  //     se3::qRot(q2.coeffs(), (this->x2.cross(dpl2).array() / I2.array()));
+  Vector3f tmp1 = q2 * (this->x2.cross(dpl2).array() / I2.array());
   Quaternionf qtmp2(0, tmp1.x(), tmp1.y(), tmp1.z());
 
   // dq1 = se3.qMul(sin(0.5*qtmp1),q1);
@@ -319,10 +317,10 @@ void ConstraintRigid::computeDx(float dlambda, Eigen::Vector3f nw,
   // Vector4f dq1 = (Quaternionf(Vector4f((0.5 * qtmp1.coeffs()).array().sin()))
   // * q1).coeffs(); Vector4f dq2 = (Quaternionf(Vector4f((-0.5 *
   // qtmp2.coeffs()).array().sin())) * q2).coeffs();
-  *dq1 = 0.5 * se3::qMul(qtmp1.coeffs(), q1.coeffs());
-  *dq2 = -0.5 * se3::qMul(qtmp2.coeffs(), q2.coeffs());
-  // Vector4f dq1 = 0.5 * (qtmp1 * q1).coeffs();
-  // Vector4f dq2 = -0.5 * (qtmp2 * q2).coeffs();
+  // *dq1 = 0.5 * se3::qMul(qtmp1.coeffs(), q1.coeffs());
+  // *dq2 = -0.5 * se3::qMul(qtmp2.coeffs(), q2.coeffs());
+  *dq1 = 0.5 * (qtmp1 * q1).coeffs();
+  *dq2 = -0.5 * (qtmp2 * q2).coeffs();
 }
 
 void ConstraintJointRevolve::solve() {

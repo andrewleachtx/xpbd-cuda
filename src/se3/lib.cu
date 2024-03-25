@@ -99,45 +99,6 @@ Eigen::Matrix3f aaToMat(Eigen::Vector3f axis, float angle) {
   return R;
 }
 
-// Eigen::Vector4f matToQ(Eigen::Matrix3f R) {
-//   double m00, m01, m02, m10, m11, m12, m20, m21, m22;
-//
-//   m00 = R(1,1); m01 = R(1,2); m02 = R(1,3);
-//   m10 = R(2,1); m11 = R(2,2); m12 = R(2,3);
-//   m20 = R(3,1); m21 = R(3,2); m22 = R(3,3);
-//   double tr = m00 + m11 + m22;
-//   double qw, qx, qy, qz;
-//   if (tr > 0) {
-//     double S = sqrt(tr+1.0) * 2; // S=4*qw
-//     qw = 0.25 * S;
-//     qx = (m21 - m12) / S;
-//     qy = (m02 - m20) / S;
-//     qz = (m10 - m01) / S;
-//   }else if ((m00 > m11)&&(m00 > m22)){
-//     double S = sqrt(1.0 + m00 - m11 - m22) * 2; // S=4*qx
-//     qw = (m21 - m12) / S;
-//     qx = 0.25 * S;
-//     qy = (m01 + m10) / S;
-//     qz = (m02 + m20) / S;
-// }else if (m11 > m22){
-//     double S = sqrt(1.0 + m11 - m00 - m22) * 2; // S=4*qy
-//     qw = (m02 - m20) / S;
-//     qx = (m01 + m10) / S;
-//     qy = 0.25 * S;
-//     qz = (m12 + m21) / S;
-// }else{
-//     double S = sqrt(1.0 + m22 - m00 - m11) * 2; // S=4*qz
-//     qw = (m10 - m01) / S;
-//     qx = (m02 + m20) / S;
-//     qy = (m12 + m21) / S;
-//     qz = 0.25 * S;
-// }
-//   return Eigen::Vector4f(qw, qx, qy, qz);
-// }
-// Eigen::Matrix3f qToMat(Eigen::Vector4f q) {
-//
-// }
-
 Eigen::Matrix4f brac(Eigen::Matrix<float, 6, 1> x) {
   Eigen::Matrix4f S = Eigen::Matrix4f::Zero();
   Eigen::Matrix3f tmp;
@@ -145,17 +106,6 @@ Eigen::Matrix4f brac(Eigen::Matrix<float, 6, 1> x) {
   S.block<3, 3>(0, 0) = tmp;
   S.block<3, 1>(0, 3) = Eigen::Vector3f(x(3), x(4), x(5));
   return S;
-}
-
-Eigen::Vector3f qRot(Eigen::Vector4f q, Eigen::Vector3f v) {
-  Eigen::Vector3f u = q.block<3, 1>(0, 0);
-  float s = q(3);
-  return (2 * u.dot(v) * u + (s * s - u.dot(u)) * v + 2 * s * u.cross(v));
-}
-Eigen::Vector3f qRotInv(Eigen::Vector4f q, Eigen::Vector3f v) {
-  Eigen::Vector3f u = -q.block<3, 1>(0, 0);
-  float s = q(3);
-  return (2 * u.dot(v) * u + (s * s - u.dot(u)) * v + 2 * s * u.cross(v));
 }
 
 Eigen::Quaternionf invert_q(const Eigen::Quaternionf &q) {
@@ -178,33 +128,6 @@ Eigen::Matrix<float, 6, 1> inertiaCuboid(Eigen::Vector3f whd, float density) {
   m(4) = mass;
   m(5) = mass;
   return m;
-}
-Eigen::Vector4f qMul(Eigen::Vector4f q1, Eigen::Vector4f q2) {
-  // q = q1 * q2
-  Eigen::Vector3f v1 = q1.block<3, 1>(0, 0);
-  Eigen::Vector3f v2 = q2.block<3, 1>(0, 0);
-  float r1 = q1(3);
-  float r2 = q2(3);
-  Eigen::Vector4f q;
-  q.block<3, 1>(0, 0) = r1 * v2 + r2 * v1 + v1.cross(v2);
-  q(3) = r1 * r2 - v1.dot(v2);
-  return q;
-}
-
-Eigen::Vector3f cross(Eigen::Vector3f v1, Eigen::Vector3f v2) {
-  Eigen::Vector3f v = Eigen::Vector3f::Zero();
-  float v1x = v1(0);
-  float v1y = v1(1);
-  float v1z = v1(2);
-  float v2x = v2(0);
-  float v2y = v2(1);
-  float v2z = v2(2);
-  float x = v1y * v2y - v1z * v2y;
-  float y = v2x * v1z - v2z * v1x;
-  v(2) = v1x * v2y - v1y * v2x;
-  v(0) = x;
-  v(1) = y;
-  return v;
 }
 
 } // namespace se3

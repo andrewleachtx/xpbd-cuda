@@ -251,7 +251,7 @@ inline void BodyRigidReference::stepBDF1(unsigned int step,
   auto I = this->Mr();            // inertia in body space
   Eigen::Vector3f Iw = I.array() * w.array(); // angular momentum in body space
   f = f + m * gravity;                        // Gravity
-  t = t + se3::cross(Iw, w);                  // Coriolis
+  t = t + Iw.cross(w);                        // Coriolis
   // Integrate velocities
   w = w + hs * Eigen::Vector3f(t.array() / I.array());
   v = v + hs * (f / m);
