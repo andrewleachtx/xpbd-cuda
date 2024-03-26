@@ -31,7 +31,7 @@ class BodyRigidReference {
 
 public:
   __host__ __device__ BodyRigidReference(const unsigned int index)
-      : index(index) {}
+      : index(data::soa_index(index)) {}
   // access the data elements in BodyRigid
 
   __host__ __device__ vec7 x() const;
@@ -120,7 +120,7 @@ public:
   __host__ __device__ BodyReference() {}
   __host__ __device__ BodyReference(const unsigned int index,
                                     const BODY_TYPE type)
-      : index(data::soa_index(index)), type(type) {}
+      : index(index), type(type) {}
   __host__ __device__ BodyRigidReference get_rigid() const {
     return BodyRigidReference(index);
   }
