@@ -363,4 +363,12 @@ inline void BodyRigidReference::write_state() {
          r(0), r(1), r(2), r(3));
 }
 
+inline void BodyRigidReference::setInitTransform(const Eigen::Matrix4f E) {
+  this->rotation(Eigen::Quaternionf(E.block<3, 3>(0, 0)));
+  if (this->rotation().coeffs()(3) < 0) {
+    this->rotation(Eigen::Quaternionf(-this->rotation().coeffs()));
+  }
+  this->position(E.block<3, 1>(0, 3));
+}
+
 } // namespace apbd
