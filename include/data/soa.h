@@ -12,7 +12,7 @@ __host__ __device__ size_t soa_index(unsigned int index);
 
 template <typename T>
 constexpr __host__ __device__ size_t get_aligned_size(size_t count) {
-  const size_t alignment_count = 32;
+  const size_t alignment_count = 32 * sizeof(T);
   const size_t byte_size = count * sizeof(T);
   if (byte_size % alignment_count == 0)
     return byte_size;
@@ -214,14 +214,15 @@ inline _SOAStoreQuaterion::_SOAStoreQuaterion(byte *data_store, size_t &offset,
 
 inline Eigen::Quaternionf _SOAStoreQuaterion::get(unsigned int index) const {
   const float4 data_val = data[soa_index(index)];
-  return Eigen::Quaternionf(data_val.x, data_val.y, data_val.z, data_val.w);
+  return Eigen::Quaternionf(
+      Eigen::Vector4f(data_val.x, data_val.y, data_val.z, data_val.w));
 }
 
 inline void _SOAStoreQuaterion::set(unsigned int index,
                                     Eigen::Quaternionf new_val) {
   const auto coeffs = new_val.coeffs();
   data[soa_index(index)] =
-      make_float4(coeffs(3), coeffs(0), coeffs(1), coeffs(2));
+      make_float4(coeffs(0), coeffs(1), coeffs(2), coeffs(3));
 }
 
 inline _SOAStoreVec3::_SOAStoreVec3(byte *data_store, size_t &offset,
