@@ -60,10 +60,9 @@ void Model::copy_data_to_store(Body *body_array) {
     auto &body = body_array[i];
     switch (body.type) {
     case BODY_RIGID: {
-      data::global_store.BodyRigid.set(i, body.data.rigid);
+      data::global_store.BodyRigid.set(data::soa_index(i), body.data.rigid);
       auto br = BodyReference(i, body.type);
-      auto brr = br.get_rigid();
-      brr.init(body.data.rigid.xInit);
+      br.get_rigid().init(body.data.rigid.xInit);
       this->bodies[i] = br;
       break;
     }
@@ -74,15 +73,15 @@ void Model::copy_data_to_store(Body *body_array) {
   this->write_state(0);
 }
 
-void Model::init(Body *body_array) {
+void Model::init(/*Body *body_array*/) {
   // initialize bodies
   // if (this->bodies == nullptr) {
   //   throw std::runtime_error("Bodies not initialized");
   // }
-  for (size_t i = 0; i < this->body_count; i++) {
-    // this->bodies[i].init(body_array[i]);
-    this->bodies[i] = BodyReference(i, body_array[i].type);
-  }
+  // for (size_t i = 0; i < this->body_count; i++) {
+  //   // this->bodies[i].init(body_array[i]);
+  //   this->bodies[i] = BodyReference(i, body_array[i].type);
+  // }
   // create constraints
   // if (this->constraints == nullptr && this->constraint_count) {
   //   throw std::runtime_error("Constraints not initialized");

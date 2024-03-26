@@ -64,7 +64,7 @@ public:
   /**
    * Initializes the model objects based on configuration
    */
-  __host__ __device__ void init(Body *bodies);
+  __host__ __device__ void init();
   /**
    * Runs all simulations to completion
    */

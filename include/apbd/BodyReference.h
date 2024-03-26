@@ -120,7 +120,7 @@ public:
   __host__ __device__ BodyReference() {}
   __host__ __device__ BodyReference(const unsigned int index,
                                     const BODY_TYPE type)
-      : index(index), type(type) {}
+      : index(data::soa_index(index)), type(type) {}
   __host__ __device__ BodyRigidReference get_rigid() const {
     return BodyRigidReference(index);
   }

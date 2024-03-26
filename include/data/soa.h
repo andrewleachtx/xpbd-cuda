@@ -50,12 +50,12 @@ _SOAStoreGeneric<T>::_SOAStoreGeneric(byte *data_store, size_t &offset,
 }
 
 template <typename T> T _SOAStoreGeneric<T>::get(unsigned int index) const {
-  return data[soa_index(index)];
+  return data[index];
 }
 
 template <typename T>
 void _SOAStoreGeneric<T>::set(unsigned int index, const T &new_val) {
-  data[soa_index(index)] = new_val;
+  data[index] = new_val;
 }
 
 struct _SOAStoreQuaterion {
@@ -213,7 +213,7 @@ inline _SOAStoreQuaterion::_SOAStoreQuaterion(byte *data_store, size_t &offset,
 }
 
 inline Eigen::Quaternionf _SOAStoreQuaterion::get(unsigned int index) const {
-  const float4 data_val = data[soa_index(index)];
+  const float4 data_val = data[index];
   return Eigen::Quaternionf(
       Eigen::Vector4f(data_val.x, data_val.y, data_val.z, data_val.w));
 }
@@ -221,8 +221,7 @@ inline Eigen::Quaternionf _SOAStoreQuaterion::get(unsigned int index) const {
 inline void _SOAStoreQuaterion::set(unsigned int index,
                                     Eigen::Quaternionf new_val) {
   const auto coeffs = new_val.coeffs();
-  data[soa_index(index)] =
-      make_float4(coeffs(0), coeffs(1), coeffs(2), coeffs(3));
+  data[index] = make_float4(coeffs(0), coeffs(1), coeffs(2), coeffs(3));
 }
 
 inline _SOAStoreVec3::_SOAStoreVec3(byte *data_store, size_t &offset,
@@ -232,14 +231,14 @@ inline _SOAStoreVec3::_SOAStoreVec3(byte *data_store, size_t &offset,
 }
 
 inline Eigen::Vector3f _SOAStoreVec3::get(unsigned int index) const {
-  const float2 el01 = x01[soa_index(index)];
-  const float el2 = x2[soa_index(index)];
+  const float2 el01 = x01[index];
+  const float el2 = x2[index];
   return Eigen::Vector3f(el01.x, el01.y, el2);
 }
 
 inline void _SOAStoreVec3::set(unsigned int index, Eigen::Vector3f new_val) {
-  x01[soa_index(index)] = make_float2(new_val(0), new_val(1));
-  x2[soa_index(index)] = new_val(2);
+  x01[index] = make_float2(new_val(0), new_val(1));
+  x2[index] = new_val(2);
 }
 
 inline _SOAStoreVec7::_SOAStoreVec7(byte *data_store, size_t &offset,
@@ -250,17 +249,16 @@ inline _SOAStoreVec7::_SOAStoreVec7(byte *data_store, size_t &offset,
 }
 
 inline vec7 _SOAStoreVec7::get(unsigned int index) const {
-  const float4 el03 = x03[soa_index(index)];
-  const float2 el45 = x45[soa_index(index)];
-  const float el6 = x6[soa_index(index)];
+  const float4 el03 = x03[index];
+  const float2 el45 = x45[index];
+  const float el6 = x6[index];
   return vec7(el03.x, el03.y, el03.z, el03.w, el45.x, el45.y, el6);
 }
 
 inline void _SOAStoreVec7::set(unsigned int index, vec7 new_val) {
-  x03[soa_index(index)] =
-      make_float4(new_val(0), new_val(1), new_val(2), new_val(3));
-  x45[soa_index(index)] = make_float2(new_val(4), new_val(5));
-  x6[soa_index(index)] = new_val(6);
+  x03[index] = make_float4(new_val(0), new_val(1), new_val(2), new_val(3));
+  x45[index] = make_float2(new_val(4), new_val(5));
+  x6[index] = new_val(6);
 }
 
 } // namespace data

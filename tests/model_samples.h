@@ -126,7 +126,7 @@ apbd::Model createModelSample(int modelID, apbd::Body *&bodies,
     break;
   }
   }
-  model.init(bodies);
+  model.init(/*bodies*/);
   model.create_store(scene_count);
 
   return model;
