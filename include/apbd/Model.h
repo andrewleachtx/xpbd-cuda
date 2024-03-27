@@ -8,37 +8,45 @@
 namespace apbd {
 class Collider;
 
+/// Maximum number of shock propagation layers
 const size_t MAX_LAYERS = 8;
+/// Maximum number of objects in each layer
 const size_t MAX_LAYER_SIZE = 4;
 
+/**
+ * A simulation model, contains all information necessary to run a single
+ * simulation. Designed to be copied to each thread and modified with any
+ * per-thread differences.
+ */
 class Model {
 public:
-  // private members
-  /**
-   * The duration of one simulation step
-   */
+  /// Duration of one simulation step
   float h;
-  /**
-   * The duration of the entire simulation
-   */
+  /// Duration of the entire simulation
   float tEnd;
   unsigned int substeps;
+  /// A list of references to the bodies for this simulation, will be
+  /// initialized when data is copied to the global store.
   BodyReference *bodies;
   size_t body_count;
   Constraint *constraints;
   size_t constraint_count;
+
+  // layer objects used to calculate collision graph
   size_t *constraint_layers;
   size_t layer_count;
   size_t *constraint_layer_sizes;
   size_t *body_layers;
   size_t *body_layer_sizes;
+
   Eigen::Vector3f gravity;
   unsigned int iters;
 
   Eigen::Matrix4f ground_E;
   float ground_size;
 
-  // derived
+  /// The number of simulation steps. Set when the model is initialized from h
+  /// and tEnd
   unsigned int steps;
 
   __host__ __device__ void stepBDF1(unsigned int step, unsigned int substep,
@@ -50,17 +58,17 @@ public:
   __host__ __device__ void computeEnergies();
 
   /**
-   * constructs default data structures
+   * Constructs default data structures
    */
   Model();
   /**
-   * constructs a copy of the model, only duplicating data that cannot be shared
+   * Constructs a copy of the model, only duplicating data that cannot be shared
    */
   __host__ __device__ Model(const Model &other);
+  /**
+   * Moves the arrays allocated in this model to device storage.
+   */
   void move_to_device();
-  __device__ static Model clone_with_buffers(const Model &other,
-                                             size_t scene_id,
-                                             BodyReference *body_buffer);
   /**
    * Initializes the model objects based on configuration
    */
@@ -69,13 +77,22 @@ public:
    * Runs all simulations to completion
    */
   __host__ __device__ void simulate(Collider *collider);
-
   /**
-   * writes current state out for debugging
+   * Writes current state out for debugging
    */
   __host__ __device__ void write_state(unsigned int step);
+  /**
+   * Prints the configuration of this model to stdout
+   */
   __host__ __device__ void print_config();
+  /**
+   * Creates the global data store object based on this model and the number of
+   * scenes.
+   */
   void create_store(size_t scene_count);
+  /**
+   * Copies the data in this model that uses SOA to the global store
+   */
   __host__ __device__ void copy_data_to_store(Body *body_array);
 };
 } // namespace apbd

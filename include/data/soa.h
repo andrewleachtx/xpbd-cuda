@@ -8,8 +8,10 @@
 
 namespace data {
 
+/// Calculates the index for accessing SOA data for the current thread.
 __host__ __device__ size_t soa_index(unsigned int index);
 
+/// Determines the optimal buffer alignment for a given type.
 template <typename T>
 constexpr __host__ __device__ size_t get_aligned_size(size_t count) {
   const size_t alignment_count = 32 * sizeof(T);
@@ -20,6 +22,8 @@ constexpr __host__ __device__ size_t get_aligned_size(size_t count) {
     return (byte_size / alignment_count + 1) * alignment_count;
 }
 
+/// Extracts a segment of a larger allocation based on a given type and number
+/// of elements
 template <typename T>
 T *get_aligned_buffer_segment(byte *data_store, size_t &offset, size_t count) {
   T *buffer_segment = reinterpret_cast<T *>(data_store + offset);
@@ -30,11 +34,19 @@ T *get_aligned_buffer_segment(byte *data_store, size_t &offset, size_t count) {
 typedef Eigen::Matrix<float, 7, 1> vec7;
 typedef Eigen::Matrix<float, 12, 1> vec12;
 
+/**
+ * An SOA store that handles any generic data type. This may not use the most
+ * optimal buffer sizes or alignments.
+ */
 template <typename T> struct _SOAStoreGeneric {
   T *data;
 
+  /// A default uninitialized constructor. Accessing data without using the full
+  /// constructor is undefined behavior.
   __host__ __device__ _SOAStoreGeneric() {}
   _SOAStoreGeneric(byte *data_store, size_t &offset, size_t count);
+  /// Calculates the size necessary to store the data in this buffer with count
+  /// elements.
   static constexpr size_t size(size_t count) {
     return get_aligned_size<T>(count);
   }
@@ -58,11 +70,19 @@ void _SOAStoreGeneric<T>::set(unsigned int index, const T &new_val) {
   data[index] = new_val;
 }
 
+/**
+ * SOA Store for an Eigen::Quaternionf. Handles conversion from 4 floats to a
+ * Quaternionf object.
+ */
 struct _SOAStoreQuaterion {
   float4 *data;
 
+  /// A default uninitialized constructor. Accessing data without using the full
+  /// constructor is undefined behavior.
   __host__ __device__ _SOAStoreQuaterion() {}
   _SOAStoreQuaterion(byte *data_store, size_t &offset, size_t count);
+  /// Calculates the size necessary to store the data in this buffer with count
+  /// elements.
   static constexpr size_t size(size_t count) {
     return get_aligned_size<float4>(count);
   }
@@ -71,12 +91,19 @@ struct _SOAStoreQuaterion {
   __host__ __device__ void set(unsigned int index, Eigen::Quaternionf new_val);
 };
 
+/**
+ * SOA Store for an Eigen::Vector3f.
+ */
 struct _SOAStoreVec3 {
   float2 *x01;
   float *x2;
 
+  /// A default uninitialized constructor. Accessing data without using the full
+  /// constructor is undefined behavior.
   __host__ __device__ _SOAStoreVec3() {}
   _SOAStoreVec3(byte *data_store, size_t &offset, size_t count);
+  /// Calculates the size necessary to store the data in this buffer with count
+  /// elements.
   static constexpr size_t size(size_t count) {
     return get_aligned_size<float2>(count) + get_aligned_size<float>(count);
   }
@@ -85,13 +112,23 @@ struct _SOAStoreVec3 {
   __host__ __device__ void set(unsigned int index, Eigen::Vector3f new_val);
 };
 
+/**
+ * SOA Store for an Eigen::Vector7f.
+ */
 struct _SOAStoreVec7 {
+  // see
+  // https://developer.nvidia.com/blog/cuda-pro-tip-increase-performance-with-vectorized-memory-access/
+  // for motivation for the sizes of these buffers
   float4 *x03;
   float2 *x45;
   float *x6;
 
+  /// A default uninitialized constructor. Accessing data without using the full
+  /// constructor is undefined behavior.
   __host__ __device__ _SOAStoreVec7() {}
   _SOAStoreVec7(byte *data_store, size_t &offset, size_t count);
+  /// Calculates the size necessary to store the data in this buffer with count
+  /// elements.
   static constexpr size_t size(size_t count) {
     return get_aligned_size<float4>(count) + get_aligned_size<float2>(count) +
            get_aligned_size<float>(count);
@@ -101,6 +138,10 @@ struct _SOAStoreVec7 {
   __host__ __device__ void set(unsigned int index, vec7 new_val);
 };
 
+/**
+ * SOA Store for a BodyRigid object. Provides access to lower-level SOA types
+ * for each element.
+ */
 struct _SOAStoreBodyRigid {
   _SOAStoreVec7 xdotInit;
   _SOAStoreVec3 position;
@@ -119,6 +160,8 @@ struct _SOAStoreBodyRigid {
 
   __host__ __device__ _SOAStoreBodyRigid() {}
   _SOAStoreBodyRigid(byte *data_store, size_t &offset, size_t count);
+  /// Calculates the size necessary to store the data in this buffer with count
+  /// elements.
   static constexpr size_t size(size_t count) {
     return _SOAStoreVec7::size(count) * 5 + _SOAStoreVec3::size(count) * 2 +
            _SOAStoreQuaterion::size(count) * 2 +
@@ -130,6 +173,10 @@ struct _SOAStoreBodyRigid {
   __host__ __device__ void set(unsigned int index, const apbd::BodyRigid &data);
 };
 
+/**
+ * Struct-of-Arrays data store. Manually implements data accesses in a single
+ * giant global buffer with the optimal alignments, sizes, and data divisions.
+ */
 class SOAStore {
 public:
   struct _SOAStoreBodyRigid BodyRigid;

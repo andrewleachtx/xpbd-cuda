@@ -178,8 +178,7 @@ void Body::regularize() {
     auto &data = this->data.affine;
     data.x = data.x1;
     Eigen::Matrix3f A = data.x.reshaped(3, 3);
-    // Eigen::JacobiSVD<Eigen::Matrix3f> svd(A);
-    // A = svd.matrixU() * svd.matrixV().transpose();
+    // Eigen SVD is not supported in device code, so another solution is used
     svd_step(A);
     data.x = A.reshaped(9, 1);
     break;
@@ -245,14 +244,14 @@ Eigen::Matrix4f Body::computeTransform() {
   case BODY_AFFINE: {
     // auto &data = this->data.affine;
     // TODO
-    break;
+    return Eigen::Matrix4f::Zero();
   }
   case BODY_RIGID: {
     auto &data = this->data.rigid;
     return data.computeTransform();
   }
   default:
-    break;
+    return Eigen::Matrix4f::Zero();
   }
 }
 
@@ -373,14 +372,12 @@ void BodyRigid::computeInertiaConst() {
 }
 
 Eigen::Vector3f BodyRigid::computePointVel(Eigen::Vector3f xl, float hs) {
-  // xdot = this.computeVelocity(k,ks,hs);
   vec7 xdot = (this->x - this->x0) / hs;
   Eigen::Vector4f qdot = xdot.block<4, 1>(0, 0);
   Eigen::Vector3f pdot = xdot.block<3, 1>(4, 0); // in world coords
   Eigen::Quaternionf q = Eigen::Quaternionf(this->x.block<4, 1>(0, 0));
   Eigen::Vector3f w =
       se3::qdotToW(q.coeffs(), qdot); // angular velocity in body coords
-  // v = R*cross(w,xl) + pdot
   return (q * w.cross(xl)) + pdot;
 }
 
@@ -408,10 +405,12 @@ void BodyRigid::regularize() {
 vec12 BodyAffine::computeVelocity(unsigned int step, unsigned int substep,
                                   float hs) {
   // TODO
+  return vec12::Zero();
 }
 
 Eigen::Matrix4f BodyAffine::computeInitTransform() {
   // TODO
+  return Eigen::Matrix4f::Zero();
 }
 
 void Body::write_state() {

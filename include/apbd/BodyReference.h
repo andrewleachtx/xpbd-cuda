@@ -6,11 +6,16 @@
 
 namespace apbd {
 
+// Aliases used to prevent errors when expanding macros using types with commas
 using GroundNarrowphaseReturn =
     cuda::std::pair<cuda::std::array<CollisionGround, 8>, size_t>;
 using NarrowphaseReturn =
     cuda::std::pair<cuda::std::array<CollisionRigid, 8>, size_t>;
 
+/**
+ * Defines a function for the BodyReference that calls the implementations on
+ * the underlying type
+ */
 #define IMPLEMENT_DELEGATED_FUNCTION(signature, call)                          \
   signature {                                                                  \
     switch (type) {                                                            \
@@ -111,9 +116,15 @@ public:
 class BodyAffineReference { /* TODO */
 };
 
+/**
+ * Represents a "pointer" to a body in the global SOAStore.
+ *
+ * @see Body for the behavior of the Body object itself, which this implements.
+ */
 class BodyReference {
 public:
   // using 32 bit because it is large enough
+  /// The index of the body within this thread's simulation.
   unsigned int index;
   BODY_TYPE type;
 
@@ -128,19 +139,6 @@ public:
     return BodyAffineReference(/*TODO*/);
   }
 
-  // void init(const Body &body) {
-  //   switch (type) {
-  //   case BODY_RIGID: {
-  //     auto data = get_rigid();
-  //     data.init(body.data.rigid.xInit);
-  //   }
-  //   case BODY_AFFINE: {
-  //     auto data = get_affine(); /* TODO */
-  //   }
-  //   default: {
-  //   }
-  //   }
-  // }
   IMPLEMENT_DELEGATED_FUNCTION(__host__ __device__ bool collide() const,
                                data.collide());
   IMPLEMENT_DELEGATED_FUNCTION(__host__ __device__ void stepBDF1(
@@ -181,13 +179,17 @@ public:
                                data.write_state());
 };
 
-using Eigen::Vector3f, Eigen::Quaternionf;
-
+/**
+ * Implements only the getter for an SOAStore stored attribute.
+ */
 #define IMPLEMENT_READONLY_ACCESS_FUNCTIONS(AttributeType, RefType, Type,      \
                                             attribute)                         \
   inline AttributeType RefType::attribute() const {                            \
     return data::global_store.Type.attribute.get(index);                       \
   }
+/**
+ * Implements the getter and setter for an SOAStore stored attribute.
+ */
 #define IMPLEMENT_ACCESS_FUNCTIONS(AttributeType, RefType, Type, attribute)    \
   inline AttributeType RefType::attribute() const {                            \
     return data::global_store.Type.attribute.get(index);                       \
@@ -197,8 +199,11 @@ using Eigen::Vector3f, Eigen::Quaternionf;
   }
 
 IMPLEMENT_ACCESS_FUNCTIONS(vec7, BodyRigidReference, BodyRigid, xdotInit)
-IMPLEMENT_ACCESS_FUNCTIONS(Vector3f, BodyRigidReference, BodyRigid, position)
-IMPLEMENT_ACCESS_FUNCTIONS(Quaternionf, BodyRigidReference, BodyRigid, rotation)
+IMPLEMENT_ACCESS_FUNCTIONS(Eigen::Vector3f, BodyRigidReference, BodyRigid,
+                           position)
+IMPLEMENT_ACCESS_FUNCTIONS(Eigen::Quaternionf, BodyRigidReference, BodyRigid,
+                           rotation)
+// Some attributes have an alternate way to get and set them for convenience
 inline vec7 BodyRigidReference::x() const {
   auto p = data::global_store.BodyRigid.position.get(index);
   auto q = data::global_store.BodyRigid.rotation.get(index).coeffs();
@@ -212,7 +217,8 @@ inline void BodyRigidReference::x1(Eigen::Vector4f new_q,
                                                   new_q(3), new_p(0), new_p(1),
                                                   new_p(2)));
 }
-IMPLEMENT_ACCESS_FUNCTIONS(Quaternionf, BodyRigidReference, BodyRigid, x1_0_rot)
+IMPLEMENT_ACCESS_FUNCTIONS(Eigen::Quaternionf, BodyRigidReference, BodyRigid,
+                           x1_0_rot)
 IMPLEMENT_ACCESS_FUNCTIONS(vec7, BodyRigidReference, BodyRigid, dxJacobi)
 inline void BodyRigidReference::dxJacobi(Eigen::Vector4f new_q,
                                          Eigen::Vector3f new_p) {
@@ -233,13 +239,13 @@ IMPLEMENT_READONLY_ACCESS_FUNCTIONS(float, BodyRigidReference, BodyRigid, mu)
 IMPLEMENT_READONLY_ACCESS_FUNCTIONS(Shape, BodyRigidReference, BodyRigid, shape)
 IMPLEMENT_READONLY_ACCESS_FUNCTIONS(float, BodyRigidReference, BodyRigid,
                                     density)
-IMPLEMENT_ACCESS_FUNCTIONS(Vector3f, BodyRigidReference, BodyRigid, Mr)
+IMPLEMENT_ACCESS_FUNCTIONS(Eigen::Vector3f, BodyRigidReference, BodyRigid, Mr)
 IMPLEMENT_ACCESS_FUNCTIONS(float, BodyRigidReference, BodyRigid, Mp)
 
 inline void BodyRigidReference::init(vec7 xInit) {
   this->computeInertiaConst();
   this->position(xInit.block<3, 1>(4, 0));
-  this->rotation(Quaternionf(xInit.block<4, 1>(0, 0)));
+  this->rotation(Eigen::Quaternionf(xInit.block<4, 1>(0, 0)));
   this->x0(xInit);
 }
 
@@ -254,10 +260,11 @@ inline void BodyRigidReference::stepBDF1(const unsigned int step,
   Eigen::Vector4f q = this->rotation().coeffs();
   Eigen::Vector3f p = this->position();
   auto w = se3::qdotToW(q, qdot); // angular velocity in body coords
-  Vector3f f = Vector3f::Zero();  // translational force in world space
-  Vector3f t = Vector3f::Zero();  // angular torque in body space
-  const auto m = this->Mp();      // scalar mass
-  const auto I = this->Mr();      // inertia in body space
+  Eigen::Vector3f f =
+      Eigen::Vector3f::Zero(); // translational force in world space
+  Eigen::Vector3f t = Eigen::Vector3f::Zero(); // angular torque in body space
+  const auto m = this->Mp();                   // scalar mass
+  const auto I = this->Mr();                   // inertia in body space
   const Eigen::Vector3f Iw =
       I.array() * w.array(); // angular momentum in body space
   f = f + m * gravity;       // Gravity
@@ -342,21 +349,21 @@ inline void BodyRigidReference::computeInertiaConst() {
 inline Eigen::Vector3f
 BodyRigidReference::computePointVel(const Eigen::Vector3f xl,
                                     const float hs) const {
-  // xdot = this.computeVelocity(k,ks,hs);
   const vec7 xdot = (this->x() - this->x0()) / hs;
   const Eigen::Vector4f qdot = xdot.block<4, 1>(0, 0);
   const Eigen::Vector3f pdot = xdot.block<3, 1>(4, 0); // in world coords
   const Eigen::Quaternionf q = this->rotation();
   const Eigen::Vector3f w =
       se3::qdotToW(q.coeffs(), qdot); // angular velocity in body coords
-  // v = R*cross(w,xl) + pdot
   return (q * w.cross(xl)) + pdot;
 }
+
 inline void BodyRigidReference::applyJacobi() {
   this->x1(this->x1() + this->dxJacobi());
   this->dxJacobi(vec7::Zero());
   this->regularize();
 }
+
 inline void BodyRigidReference::write_state() {
   auto r = rotation().coeffs();
   printf("%f %f %f r %f %f %f %f", position()(0), position()(1), position()(2),

@@ -39,10 +39,6 @@ Model::Model(const Model &other)
 #endif
 }
 
-// Model::~Model() {
-//   global_store.deallocate();
-// }
-
 void Model::create_store(size_t scene_count) {
   // TODO: handle other types of bodies
   data::SOAStore data_store(this->body_count, scene_count);
@@ -74,26 +70,12 @@ void Model::copy_data_to_store(Body *body_array) {
 }
 
 void Model::init(/*Body *body_array*/) {
-  // initialize bodies
-  // if (this->bodies == nullptr) {
-  //   throw std::runtime_error("Bodies not initialized");
-  // }
-  // for (size_t i = 0; i < this->body_count; i++) {
-  //   // this->bodies[i].init(body_array[i]);
-  //   this->bodies[i] = BodyReference(i, body_array[i].type);
-  // }
-  // create constraints
-  // if (this->constraints == nullptr && this->constraint_count) {
-  //   throw std::runtime_error("Constraints not initialized");
-  // }
+  // bodies are initialized when data is copied to store
   for (size_t i = 0; i < this->constraint_count; i++) {
     this->constraints[i].init();
   }
   // calculate parameters
   this->steps = ceil(this->tEnd / this->h);
-  // this->hs = this->h / this->substeps;
-  // this->k = 0;
-  // this->ks
   this->print_config();
 }
 
@@ -102,16 +84,6 @@ void Model::move_to_device() {
   constraints = move_array_to_device(constraints, constraint_count);
   // TODO: layers
 }
-
-// __device__ Model Model::clone_with_buffers(const Model &other, size_t
-// scene_id,
-//                                            BodyReference *body_buffer) {
-//   Model new_model(other);
-//
-//   new_model.bodies = &body_buffer[other.body_count * scene_id];
-//   memcpy_device(new_model.bodies, other.bodies, other.body_count);
-//   return new_model;
-// }
 
 void Model::simulate(Collider *collider) {
   float time = 0;
@@ -127,7 +99,6 @@ void Model::simulate(Collider *collider) {
       time += hs;
     }
     this->computeEnergies();
-    // draw ?
     this->write_state(step + 1);
   }
 }

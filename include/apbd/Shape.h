@@ -35,16 +35,7 @@ public:
 
   // TODO: handle other shapes
   __host__ __device__ Shape(const Shape &other)
-      : type(other.type), data{.cuboid = other.data.cuboid} {
-    // this->type = other.type;
-    // switch (other.type) {
-    //   case SHAPE_CUBOID:
-    //
-    // this->data.cuboid = other.data.cuboid;
-    //   default:
-    //     break;
-    // }
-  }
+      : type(other.type), data{.cuboid = other.data.cuboid} {}
   __host__ __device__ Shape(ShapeCuboid cuboid);
   __host__ __device__ Shape &operator=(const Shape &);
 

@@ -184,15 +184,9 @@ vec7 ConstraintGround::computeDx(const float dlambda,
   const Vector3f dp = dpw / m1;
   // Quaternion update
   const Quaternionf q1 = this->body.x1_0_rot();
-  // const auto dpl1 = se3::qRotInv(q1.coeffs(), dpw);
   const auto dpl1 = (se3::invert_q(q1) * dpw);
   const Vector3f q2vec = q1 * (xl.cross(dpl1).array() / I1.array());
-  // q2vec << se3::qRot(q1.coeffs(), (xl.cross(dpl1).array() / I1.array())), 0;
-  // q2vec << (q1 * (xl.cross(dpl1).array() / I1.array())), 0;
-  // qtmp1 = [I1.\se3.cross(rl1,dpl1); 0];
-  // dq = se3.qMul(sin(0.5*qtmp1),q1);
   const Quaternionf q2(0, q2vec(0), q2vec(1), q2vec(2));
-  // const Vector4f dq = 0.5 * se3::qMul(q2.coeffs(), q1.coeffs());
   const Vector4f dq = 0.5 * (q2 * q1).coeffs();
   return vec7(dq(0), dq(1), dq(2), dq(3), dp(0), dp(1), dp(2));
 }
@@ -212,7 +206,6 @@ void ConstraintRigid::solveNorPos(const float hs) {
   const Vector3f vNormalized = v / vNorm;
   Vector3f tx, ty;
   Collider::generateTangents(this->nw, &tx, &ty);
-  // vNormalizedContactFrame = [-this->nw'; tx' ; ty'] * vNormalized;
   Eigen::Matrix3f tmp;
   tmp << -this->nw, tx, ty;
   const Vector3f vNormalizedContactFrame = tmp.transpose() * vNormalized;
@@ -225,7 +218,7 @@ void ConstraintRigid::solveNorPos(const float hs) {
   if (lambdaNor < 0) {
     dlambdaNor = -this->lambda(0);
   }
-  this->lambda(0) = this->lambda(0) + dlambdaNor;
+  this->lambda(0) += dlambdaNor;
   const float mu1 = this->body1.mu();
   const float mu2 = this->body2.mu();
   const float mu = 0.5 * (mu1 + mu2);
@@ -242,8 +235,8 @@ void ConstraintRigid::solveNorPos(const float hs) {
       dlambdaTan = lambdaTan / lambdaTanLen * lambdaNorLenMu -
                    Vector2f(this->lambda(1), this->lambda(2));
     }
-    this->lambda(1) = this->lambda(1) + dlambdaTan(0);
-    this->lambda(2) = this->lambda(2) + dlambdaTan(1);
+    this->lambda(1) += dlambdaTan(0);
+    this->lambda(2) += dlambdaTan(1);
   }
 
   Vector3f frictionalContactLambda;
@@ -302,30 +295,15 @@ void ConstraintRigid::computeDx(const float dlambda, const Eigen::Vector3f nw,
   // Quaternion update
   const Quaternionf q1 = this->body1.x1_0_rot();
   const Quaternionf q2 = this->body2.x1_0_rot();
-  // Vector3f dpl1 = se3::qRotInv(q1.coeffs(), dpw);
-  // Vector3f dpl2 = se3::qRotInv(q2.coeffs(), dpw);
   const Vector3f dpl1 = se3::invert_q(q1) * dpw;
   const Vector3f dpl2 = se3::invert_q(q2) * dpw;
 
-  // qtmp1 = [se3.qRot(q1,I1.\se3.cross(this.x1,dpl1)); 0];
-  // Vector3f tmp =
-  //     se3::qRot(q1.coeffs(), (this->x1.cross(dpl1).array() / I1.array()));
-  const Vector3f tmp = q1 * (this->x1.cross(dpl1).array() / I1.array());
-  const Quaternionf qtmp1(0, tmp.x(), tmp.y(), tmp.z());
+  const Vector3f tmp1 = q1 * (this->x1.cross(dpl1).array() / I1.array());
+  const Quaternionf qtmp1(0, tmp1.x(), tmp1.y(), tmp1.z());
 
-  // qtmp2 = [se3.qRot(q2,I2.\se3.cross(this.x2,dpl2)); 0];
-  // Vector3f tmp1 =
-  //     se3::qRot(q2.coeffs(), (this->x2.cross(dpl2).array() / I2.array()));
-  const Vector3f tmp1 = q2 * (this->x2.cross(dpl2).array() / I2.array());
-  const Quaternionf qtmp2(0, tmp1.x(), tmp1.y(), tmp1.z());
+  const Vector3f tmp2 = q2 * (this->x2.cross(dpl2).array() / I2.array());
+  const Quaternionf qtmp2(0, tmp2.x(), tmp2.y(), tmp2.z());
 
-  // dq1 = se3.qMul(sin(0.5*qtmp1),q1);
-  // dq2 = se3.qMul(sin(-0.5*qtmp2),q2);
-  // Vector4f dq1 = (Quaternionf(Vector4f((0.5 * qtmp1.coeffs()).array().sin()))
-  // * q1).coeffs(); Vector4f dq2 = (Quaternionf(Vector4f((-0.5 *
-  // qtmp2.coeffs()).array().sin())) * q2).coeffs();
-  // *dq1 = 0.5 * se3::qMul(qtmp1.coeffs(), q1.coeffs());
-  // *dq2 = -0.5 * se3::qMul(qtmp2.coeffs(), q2.coeffs());
   *dq1 = 0.5 * (qtmp1 * q1).coeffs();
   *dq2 = -0.5 * (qtmp2 * q2).coeffs();
 }

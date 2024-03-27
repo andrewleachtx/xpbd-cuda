@@ -12,13 +12,15 @@ enum CONSTRAINT_TYPE {
   CONSTRAINT_JOINT_REVOLVE,
 };
 
+/**
+ * Represents a collision with the ground.
+ */
 struct ConstraintGround {
   Eigen::Vector3f C;
   Eigen::Vector3f lambda;
   Eigen::Vector3f nw;
   Eigen::Vector3f lambdaSF;
   float d;
-  float dlambdaNor;
   bool shockProp;
   BodyRigidReference body;
   Eigen::Matrix4f Eg;
@@ -38,13 +40,15 @@ struct ConstraintGround {
   __host__ __device__ void applyJacobi();
 };
 
+/**
+ * Represents a collision between a rigid object and another rigid object.
+ */
 struct ConstraintRigid {
   Eigen::Vector3f C;
   Eigen::Vector3f lambda;
   Eigen::Vector3f nw;
   Eigen::Vector3f lambdaSF;
   float d;
-  float dlambdaNor;
   bool shockProp;
   BodyRigidReference body1;
   BodyRigidReference body2;
@@ -97,6 +101,7 @@ public:
 
   __host__ __device__ void init();
 
+  /// Sets C and lambda to 0
   __host__ __device__ void clear();
 
   __host__ __device__ void solve(float hs, bool doShockProp);

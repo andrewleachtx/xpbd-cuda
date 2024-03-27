@@ -2,6 +2,9 @@
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
 #include <Eigen/Dense>
 
+// These collision objects are used to store information when collisions are
+// calculated to later create collision constraints
+
 struct CollisionGround {
   float d;
   Eigen::Vector3f xl;

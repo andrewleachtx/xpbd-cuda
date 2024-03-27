@@ -1,2 +1,1 @@
-#include "se3/lib.h"
-namespace se3 {} // namespace se3
+// implementation moved to header for inlining
