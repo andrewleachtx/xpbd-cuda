@@ -19,16 +19,16 @@ ConstraintGround::ConstraintGround(BodyRigidReference body, Eigen::Matrix4f Eg,
                                    Eigen::Vector3f xw, Eigen::Vector3f nw,
                                    Eigen::Vector3f vw)
     : C(Vector3f::Zero()), lambda(Vector3f::Zero()), nw(nw),
-      lambdaSF(Vector3f::Zero()), d(0), dlambdaNor(0), shockProp(false),
-      body(body), Eg(Eg), xl(xl), xw(xw), vw(vw) {}
+      lambdaSF(Vector3f::Zero()), d(d), shockProp(false), body(body), Eg(Eg),
+      xl(xl), xw(xw), vw(vw) {}
 
 ConstraintRigid::ConstraintRigid(BodyRigidReference body1,
                                  BodyRigidReference body2, float d,
                                  Eigen::Vector3f nw, Eigen::Vector3f x1,
                                  Eigen::Vector3f x2)
     : C(Vector3f::Zero()), lambda(Vector3f::Zero()), nw(nw),
-      lambdaSF(Vector3f::Zero()), d(0), dlambdaNor(0), shockProp(false),
-      body1(body1), body2(body2), x1(x1), x2(x2) {}
+      lambdaSF(Vector3f::Zero()), d(d), shockProp(false), body1(body1),
+      body2(body2), x1(x1), x2(x2) {}
 
 Constraint &Constraint::operator=(const Constraint &other) {
   this->type = other.type;
@@ -271,8 +271,8 @@ float ConstraintRigid::solvePosDir2(const float c, const Eigen::Vector3f nw) {
   const auto m2 = this->body2.Mp();
   const auto I1 = this->body1.Mr();
   const auto I2 = this->body2.Mr();
-  const Quaternionf q1 = this->body1.x1_0_rot();
-  const Quaternionf q2 = this->body2.x1_0_rot();
+  const Quaternionf q1 = this->body1.rotation();
+  const Quaternionf q2 = this->body2.rotation();
   const Vector3f nl1 = se3::invert_q(q1) * nw;
   const Vector3f nl2 = se3::invert_q(q2) * nw;
   const Vector3f rl1 = this->x1;
