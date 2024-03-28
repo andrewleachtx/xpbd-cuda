@@ -20,18 +20,21 @@ __global__ void kernel(apbd::Model model, apbd::Body *body_buffer,
   model.copy_data_to_store(body_buffer);
   Eigen::Matrix4f E = Eigen::Matrix4f::Identity();
 
-  Eigen::Matrix3f R = se3::aaToMat(
-      Eigen::Vector3f(1, 1, 1), static_cast<float>(scene_id) * 0.5 * M_PI / 4);
-  E.block<3, 3>(0, 0) = R;
+  // Eigen::Matrix3f R = se3::aaToMat(
+  //     Eigen::Vector3f(1, 1, 1), static_cast<float>(scene_id) * 0.5 * M_PI /
+  //     4);
+  // E.block<3, 3>(0, 0) = R;
 
   for (size_t index = 0; index < model.body_count; index++) {
     auto &body = model.bodies[index];
-    E.block<3, 1>(0, 3) = body.get_rigid().position();
+    E.block<3, 1>(0, 3) = body.get_rigid().position() +
+                          Eigen::Vector3f(0,
+                                          (static_cast<float>(scene_id) - 4) *
+                                              static_cast<float>(index) * 0.1,
+                                          0);
     body.setInitTransform(E);
   }
 
-  // apbd::Model thread_model =
-  //     apbd::Model::clone_with_buffers(model, scene_id, body_buffer);
   // create a thread-local collider
   auto collider =
       apbd::Collider(&model, scene_id, body_ptr_buffer, constraint_buffer);
@@ -42,10 +45,7 @@ __global__ void kernel(apbd::Model model, apbd::Body *body_buffer,
 void run_kernel(apbd::Model model, apbd::Body *bodies, int sims) {
   cout << "# thread blocks: " << (sims + BLOCK_SIZE - 1) / BLOCK_SIZE << endl;
 
-  // const size_t shared_size = c.constraints.size() * sizeof(Constraint);
   const size_t shared_size = 0;
-  // std::cout << "kernel shared_size: " << shared_size << " = " <<
-  // c.constraints.size() << " * " << sizeof(Constraint) << std::endl;
 
   apbd::BodyReference *body_ptr_buffer = nullptr;
   apbd::Constraint *constraint_buffer = nullptr;
@@ -71,6 +71,21 @@ void run_cpu_thread(apbd::Model model, apbd::Body *bodies, int sims,
   for (int i = id; i < sims; i += processor_count) {
     _thread_scene_id = i;
     model.copy_data_to_store(bodies);
+    Eigen::Matrix4f E = Eigen::Matrix4f::Identity();
+
+    // Eigen::Matrix3f R = se3::aaToMat(
+    //     Eigen::Vector3f(1, 1, 1), static_cast<float>(i) * 0.5 * M_PI / 4);
+    // E.block<3, 3>(0, 0) = R;
+
+    for (size_t index = 0; index < model.body_count; index++) {
+      auto &body = model.bodies[index];
+      E.block<3, 1>(0, 3) = body.get_rigid().position() +
+                            Eigen::Vector3f(0,
+                                            (static_cast<float>(i) - 4) *
+                                                static_cast<float>(index) * 0.1,
+                                            0);
+      body.setInitTransform(E);
+    }
     auto collider = apbd::Collider(&model);
     model.simulate(&collider);
   }
@@ -104,29 +119,19 @@ struct MainState {
 
 const char *HELP = "\
 arguments:          \n\
-  -a, --algorithm ALG  Which version of the simulation algorithm to use\n\
-                       values: v, gp; default v\n\
-  -o, --output FILE    An output file to write the simulated positions to\n\
   -i, --model_id ID    The model scene to use\n\
   -s, --scene-count N  The number of simulations to run\n\
-  -v, --visualize      Whether to visualize the finished simulation. Only\n\
-                       supported on some algorithms\n\
   -h, --help           Show this help text\n\
 ";
 
 MainState parse_arguments(int argc, char *argv[]) {
   struct MainState state = {
-      .visualize = false,
-      .output_file = "",
       .model_id = 0,
       .scene_count = 1,
   };
 
-  option longopts[] = {{"visualize", no_argument, NULL, 'v'},
-                       {"output", required_argument, NULL, 'o'},
-                       {"model_id", required_argument, NULL, 'm'},
+  option longopts[] = {{"model_id", required_argument, NULL, 'm'},
                        {"scene-count", required_argument, NULL, 's'},
-                       // {"algorithm", required_argument, NULL, 'a'},
                        {"help", no_argument, NULL, 'h'},
                        {0}};
 
@@ -141,16 +146,6 @@ MainState parse_arguments(int argc, char *argv[]) {
     case 'h':
       cout << HELP << endl;
       exit(0);
-    case 'v':
-      state.visualize = true;
-      break;
-    case 'o':
-      if (optarg == NULL) {
-        throw runtime_error("argument for output file is required.");
-      }
-      cout << "# output-file: " << optarg << endl;
-      state.output_file = optarg;
-      break;
     case 'm':
       if (optarg == NULL) {
         break;
@@ -165,17 +160,6 @@ MainState parse_arguments(int argc, char *argv[]) {
       cout << "# scene-count: " << optarg << endl;
       state.scene_count = std::stoul(optarg);
       break;
-    // case 'a':
-    //   o = optarg;
-    //   if (o == "v") {
-    //     state.algorithm = VALIDATION;
-    //   } else if (o == "gp") {
-    //     state.algorithm = GPU_PARALLEL;
-    //   } else {
-    //     throw runtime_error("Unknown algorithm: " + string(optarg) +
-    //                         ", try v or gp.");
-    //   }
-    //   break;
     case '?':
     default:
       cout << "unknown option." << endl;

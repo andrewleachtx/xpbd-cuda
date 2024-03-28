@@ -108,7 +108,9 @@ void Constraint::solve(const float hs, const bool doShockProp) {
 }
 
 void ConstraintGround::solveNorPos(const float hs) {
-  const Vector3f v = hs * body.computePointVel(xl, hs);
+  const float penetration_resolution_speed = 0.1;
+  const Vector3f v = hs * body.computePointVel(xl, hs) +
+                     penetration_resolution_speed * this->d * this->nw;
   const float vNorm = v.norm();
   const Vector3f vNormalized = v / vNorm;
   const Vector3f tx = Eg.block<3, 1>(0, 0);
@@ -165,7 +167,7 @@ float ConstraintGround::solvePosDir1(const float c,
   const auto m1 = this->body.Mp();
   const auto I1 = this->body.Mr();
   const Quaternionf q1 = this->body.rotation();
-  const Vector3f nl1 = se3::invert_q(q1) * nw;
+  const Vector3f nl1 = q1.inverse() * nw;
   const Vector3f rl1 = this->xl;
   const Vector3f rnl1 = rl1.cross(nl1);
   const float w1 =
@@ -184,7 +186,7 @@ vec7 ConstraintGround::computeDx(const float dlambda,
   const Vector3f dp = dpw / m1;
   // Quaternion update
   const Quaternionf q1 = this->body.x1_0_rot();
-  const auto dpl1 = (se3::invert_q(q1) * dpw);
+  const auto dpl1 = q1.inverse() * dpw;
   const Vector3f q2vec = q1 * (xl.cross(dpl1).array() / I1.array());
   const Quaternionf q2(0, q2vec(0), q2vec(1), q2vec(2));
   const Vector4f dq = 0.5 * (q2 * q1).coeffs();
@@ -198,10 +200,13 @@ void ConstraintRigid::applyJacobi() {
 }
 
 void ConstraintRigid::solveNorPos(const float hs) {
-
+  const float penetration_resolution_speed = 0.1;
+  const float allowable_penetration = 1e-3;
   const Vector3f v1w = this->body1.computePointVel(this->x1, hs);
   const Vector3f v2w = this->body2.computePointVel(this->x2, hs);
-  const Vector3f v = hs * (v1w - v2w);
+  const Vector3f v = hs * (v1w - v2w) - penetration_resolution_speed *
+                                            (this->d + allowable_penetration) *
+                                            this->nw;
   const float vNorm = v.norm();
   const Vector3f vNormalized = v / vNorm;
   Vector3f tx, ty;
@@ -266,8 +271,8 @@ float ConstraintRigid::solvePosDir2(const float c, const Eigen::Vector3f nw) {
   const auto I2 = this->body2.Mr();
   const Quaternionf q1 = this->body1.rotation();
   const Quaternionf q2 = this->body2.rotation();
-  const Vector3f nl1 = se3::invert_q(q1) * nw;
-  const Vector3f nl2 = se3::invert_q(q2) * nw;
+  const Vector3f nl1 = q1.inverse() * nw;
+  const Vector3f nl2 = q2.inverse() * nw;
   const Vector3f rl1 = this->x1;
   const Vector3f rl2 = this->x2;
   const Vector3f rnl1 = rl1.cross(nl1);
@@ -295,8 +300,8 @@ void ConstraintRigid::computeDx(const float dlambda, const Eigen::Vector3f nw,
   // Quaternion update
   const Quaternionf q1 = this->body1.x1_0_rot();
   const Quaternionf q2 = this->body2.x1_0_rot();
-  const Vector3f dpl1 = se3::invert_q(q1) * dpw;
-  const Vector3f dpl2 = se3::invert_q(q2) * dpw;
+  const Vector3f dpl1 = q1.inverse() * dpw;
+  const Vector3f dpl2 = q2.inverse() * dpw;
 
   const Vector3f tmp1 = q1 * (this->x1.cross(dpl1).array() / I1.array());
   const Quaternionf qtmp1(0, tmp1.x(), tmp1.y(), tmp1.z());

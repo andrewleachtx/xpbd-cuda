@@ -214,10 +214,10 @@ void Model::write_state(unsigned int step) {
     printf("Step %d\n", step);
   // print up to 8 simulations in parallel
   for (size_t i = 0; i < body_count * 8; i++) {
-    if (i / 9 != threadIdx.x)
+    if (i / body_count != threadIdx.x)
       continue;
     printf("%lu ", i);
-    bodies[i % 9].write_state();
+    bodies[i % body_count].write_state();
     printf("\n");
   }
 #else

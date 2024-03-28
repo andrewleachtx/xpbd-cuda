@@ -2,7 +2,7 @@ import bpy
 
 file_text = []
 
-with open(bpy.path.abspath("//positions_autogen.txt")) as file:
+with open(bpy.path.abspath("//tx.txt")) as file:
     file_text = file.readlines()
 
 current_frame = 0
@@ -43,7 +43,7 @@ for line in file_text:
 #        bpy.context.scene.frame_set(current_frame)
     else:
         elements = line.split()
-        body_id = int(elements[0])
+        body_id = int(elements[0])-1
         name = f"Cube_valid.{body_id:03d}"
         x = float(elements[1])
         y = float(elements[2])

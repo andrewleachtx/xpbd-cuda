@@ -15,8 +15,6 @@ __host__ __device__ Eigen::Matrix3f aaToMat(Eigen::Vector3f axis, float angle);
 
 __host__ __device__ Eigen::Matrix4f brac(Eigen::Matrix<float, 6, 1> x);
 
-__host__ __device__ Eigen::Quaternionf invert_q(const Eigen::Quaternionf &q);
-
 /**
  * Gets the diagonal inertia of a cuboid with (width, height, depth)
  */
@@ -128,12 +126,6 @@ inline Eigen::Matrix4f brac(Eigen::Matrix<float, 6, 1> x) {
   S.block<3, 3>(0, 0) = tmp;
   S.block<3, 1>(0, 3) = Eigen::Vector3f(x(3), x(4), x(5));
   return S;
-}
-
-inline Eigen::Quaternionf invert_q(const Eigen::Quaternionf &q) {
-  // Eigen::Vector3f tmp = -q.vec();
-  // return Eigen::Quaternionf(q.w(), tmp(0), tmp(1), tmp(2));
-  return Eigen::Quaternionf(q.w(), -q.x(), -q.y(), -q.z());
 }
 
 inline Eigen::Matrix<float, 6, 1> inertiaCuboid(Eigen::Vector3f whd,
