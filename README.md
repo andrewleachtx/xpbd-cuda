@@ -2,6 +2,13 @@
 
 A CUDA-accelerated XPBD-based physics simulation framework.
 
+## What I Needed To Install
+1. Visual Studio (17, 2022) https://visualstudio.microsoft.com/
+2. CUDA (12.6) https://developer.nvidia.com/cuda-downloads
+3. Download / clone Eigen into `include/` and follow the "INSTALL" file (create `build/` in `eigen3.x.x/`, cd into, cmake ..)
+4. The first time I did `cmake -S . -B build` in `xpbd-cuda/` I couldn't use cmd/pwsh, I had to use "x64 Native Tools Command Prompt for VS 2022" because otherwise it wouldn't acknowledge my CUDA. Probably other workarounds but this was fastest.
+5. Trying to build/compile in VS came with a LOT of errors - guessing version specific to my CUDA or Eigen3 usage. Not sure.
+
 ## Building
 
 ```bash
